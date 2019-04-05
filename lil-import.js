@@ -1,5 +1,6 @@
 const fs = require('fs');
 const pathModule = require('path');
+const { performance } = require('perf_hooks');
 const VERBOSE = true;
 
 const cachedImports = {};
@@ -139,13 +140,13 @@ const compileFolder = async (folderPath, publicDirPath) => {
     await createFolder(pathModule.resolve(publicDirPath));
   }
 
-  new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     fs.readdir(folderPath, async (err, files) => {
       if (err) {
         return reject(`Folder: ${folderPath} doesn't exist`);
       }
 
-      await Promise.all(
+      Promise.all(
         files
           .filter(
             x =>
@@ -173,20 +174,28 @@ const compileFolder = async (folderPath, publicDirPath) => {
                 });
             }
 
-            await fs.stat(fullPath, (err, stat) => {
-              if (stat && stat.isDirectory()) {
-                return compileFolder(
-                  `${folderPath}${localFilePath}/`,
-                  `${publicDirPath}${localFilePath}/`,
-                  true
-                );
-              } else {
-                return copyFile(fullPath, publicPath);
-              }
+            return new Promise((resolve, reject) => {
+              fs.stat(fullPath, async (err, stat) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                if (stat && stat.isDirectory()) {
+                  await compileFolder(
+                    `${folderPath}${localFilePath}/`,
+                    `${publicDirPath}${localFilePath}/`,
+                    true
+                  );
+                } else {
+                  await copyFile(fullPath, publicPath);
+                }
+                return resolve();
+              });
             });
           })
-      );
-      return resolve();
+      )
+        .then(resolve)
+        .catch(reject);
     });
   });
 };
@@ -195,10 +204,15 @@ const compileFolder = async (folderPath, publicDirPath) => {
   try {
     // TODO: clear public folder
     // TODO: check for _imports
+    const start = performance.now();
 
     await prepareImports('./_imports/');
     await compileImports();
     await compileFolder('./', './public/');
+
+    const end = performance.now();
+
+    console.log(`Compiled in ${Math.ceil(end - start)}ms`);
   } catch (e) {
     console.log(e);
   }
