@@ -25,7 +25,7 @@ const importPath = path => {
   return `./_imports/${path}`;
 };
 
-const compileFile = async (filePath, holdInMemory = false) => {
+const compileFile = async (filePath, publicPath, holdInMemory = false) => {
   // ADD FOLDER PATH IN
   return new Promise((resolve, reject) => {
     fs.readFile(filePath, async (err, file) => {
@@ -74,8 +74,8 @@ const compileFile = async (filePath, holdInMemory = false) => {
       }
 
       if (!holdInMemory) {
-        fs.writeFile(`./public/${filePath}`, fileBody, () => {
-          console.log(`${updated ? 'Compiled' : 'Copied'} ${filePath}`);
+        fs.writeFile(publicPath, fileBody, () => {
+          console.log(`${updated ? 'Compiled' : 'Copied'} ${publicPath}`);
           return resolve();
         });
       }
@@ -83,15 +83,15 @@ const compileFile = async (filePath, holdInMemory = false) => {
   });
 };
 
-const compileFolder = async (path, holdInMemory = false, recursive = false) => {
-  if (!holdInMemory) {
-    await checkForFolder(`./public/${path}`);
+const compileFolder = async (folderPath, publicDirPath, recursive = false) => {
+  if (publicDirPath) {
+    await createFolder(pathModule.resolve(publicDirPath));
   }
 
   new Promise((resolve, reject) => {
-    fs.readdir(path, async (err, files) => {
+    fs.readdir(folderPath, async (err, files) => {
       if (err) {
-        return reject(`Folder: ${path} doesn't exist`);
+        return reject(`Folder: ${folderPath} doesn't exist`);
       }
 
       await Promise.all(
@@ -102,18 +102,29 @@ const compileFolder = async (path, holdInMemory = false, recursive = false) => {
               !x.startsWith('_imports') &&
               !x.startsWith('public')
           )
-          .map(async x => {
-            const fullPath = `${path}${x}`;
+          .map(async localFilePath => {
+            let fullPath = pathModule.resolve(folderPath, localFilePath);
+            const publicPath = pathModule.resolve(
+              `./public/`,
+              folderPath,
+              localFilePath
+            );
 
-            if (x.endsWith('.html')) {
-              return compileFile(fullPath, holdInMemory);
+            if (localFilePath.endsWith('.html')) {
+              return compileFile(fullPath, publicPath, !publicDirPath);
             }
 
             await fs.stat(fullPath, (err, stat) => {
               if (stat && stat.isDirectory()) {
                 if (recursive) {
-                  return compileFolder(`${fullPath}/`, false, true);
+                  return compileFolder(
+                    `${folderPath}${localFilePath}/`,
+                    `${publicDirPath}${localFilePath}/`,
+                    true
+                  );
                 }
+              } else {
+                return copyFile(fullPath, publicPath);
               }
             });
           })
@@ -123,12 +134,25 @@ const compileFolder = async (path, holdInMemory = false, recursive = false) => {
   });
 };
 
-const checkForFolder = path => {
+const copyFile = (src, dest) => {
+  return new Promise((resolve, reject) => {
+    fs.copyFile(src, dest, err => {
+      if (err) {
+        return reject(err);
+      } else {
+        console.log(`Copied ${src}`);
+        resolve();
+      }
+    });
+  });
+};
+
+const createFolder = path => {
   return new Promise((resolve, reject) => {
     fs.readdir(path, (err, data) => {
       if (err) {
         fs.mkdir(path, (err, data) => {
-          return err ? reject(`Couldn't create public folder`) : resolve();
+          return err ? reject(`Couldn't create folder: ${path}`) : resolve();
         });
       } else {
         return resolve();
@@ -139,9 +163,11 @@ const checkForFolder = path => {
 
 (async () => {
   try {
-    await checkForFolder('./public/');
-    await compileFolder('./_imports/', true);
-    await compileFolder('./', false, true);
+    // clear public folder
+    // check for _imports
+
+    await compileFolder('./_imports/', '');
+    await compileFolder('./', './public/', true);
   } catch (e) {
     console.log(e);
   }
