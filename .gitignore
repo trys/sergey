@@ -1,2 +1,4 @@
 .DS_Store
-public
+public/
+node_modules/
+package-lock.json

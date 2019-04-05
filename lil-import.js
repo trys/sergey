@@ -1,14 +1,17 @@
 const fs = require('fs');
 const pathModule = require('path');
+const chokidar = require('chokidar');
 const { performance } = require('perf_hooks');
 const VERBOSE = true;
 
 const cachedImports = {};
 
+// TODO: use this in the compileFolder bit
+const excludedFolders = ['.git', 'node_modules', 'src', '_imports', 'public'];
+
 /**
  * Utils
  */
-
 const copyFile = (src, dest) => {
   return new Promise((resolve, reject) => {
     fs.copyFile(src, dest, err => {
@@ -63,6 +66,49 @@ const writeFile = (path, body) => {
   });
 };
 
+const clearPublicFolder = async () => {
+  const deleteFolder = path => {
+    if (fs.existsSync(path)) {
+      fs.readdirSync(path).forEach(function(file, index) {
+        const newPath = path + '/' + file;
+        if (fs.lstatSync(newPath).isDirectory()) {
+          deleteFolder(newPath);
+        } else {
+          fs.unlinkSync(newPath);
+        }
+      });
+      fs.rmdirSync(path);
+    }
+  };
+
+  return deleteFolder('./public/');
+};
+
+const getAllHTMLFiles = async path => {
+  const files = [];
+
+  if (fs.existsSync(path)) {
+    fs.readdirSync(path).forEach(function(file, index) {
+      if (excludedFolders.find(x => file.startsWith(x))) {
+        return;
+      }
+
+      if (!file.endsWith('.html')) {
+        return;
+      }
+
+      const newPath = path + '/' + file;
+      if (fs.lstatSync(newPath).isDirectory()) {
+        getAllHTMLFiles(newPath);
+      } else {
+        files.push(newPath);
+      }
+    });
+  }
+
+  return files;
+};
+
 /**
  * Real code
  */
@@ -87,7 +133,7 @@ const compileImports = async () => {
   });
 };
 
-const simpleSlotsToContent = (body, content = '') => {
+const compileSlots = (body, content = '') => {
   let m;
   const complexSlot = /<lil-slot>(.*)<\/lil-slot>/gms;
   while ((m = complexSlot.exec(body)) !== null) {
@@ -114,7 +160,7 @@ const compileBody = body => {
     let replace = cachedImports[key] || '';
 
     // Remove empty slots
-    replace = simpleSlotsToContent(replace, '');
+    replace = compileSlots(replace, '');
 
     body = body.replace(find, replace);
   }
@@ -127,7 +173,7 @@ const compileBody = body => {
 
     const [find, key, content] = m;
     let replace = cachedImports[key] || '';
-    replace = simpleSlotsToContent(replace, content);
+    replace = compileSlots(replace, content);
 
     body = body.replace(find, replace);
   }
@@ -200,12 +246,18 @@ const compileFolder = async (folderPath, publicDirPath) => {
   });
 };
 
-(async () => {
+const compileFiles = async () => {
   try {
-    // TODO: clear public folder
-    // TODO: check for _imports
+    await readDir('./_imports/');
+  } catch (e) {
+    console.error('No ./_imports/ folder found');
+    return;
+  }
+
+  try {
     const start = performance.now();
 
+    await clearPublicFolder();
     await prepareImports('./_imports/');
     await compileImports();
     await compileFolder('./', './public/');
@@ -216,4 +268,18 @@ const compileFolder = async (folderPath, publicDirPath) => {
   } catch (e) {
     console.log(e);
   }
+};
+
+// (async () => {
+//   await compileFiles();
+// })();
+
+(async () => {
+  await compileFiles();
+
+  const files = await getAllHTMLFiles('.');
+  console.log(`Watching ${files.length} file${files.length !== 1 ? 's' : ''}`);
+
+  // './**/*.html'
+  chokidar.watch(files, {}).on('change', compileFiles);
 })();

@@ -1,0 +1,24 @@
+{
+  "name": "lil-ssg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lil-import.js",
+  "scripts": {
+    "start": "npm run start:watch",
+    "start:watch": "node lil-import.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trys/lil-ssg.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/trys/lil-ssg/issues"
+  },
+  "homepage": "https://github.com/trys/lil-ssg#readme",
+  "dependencies": {
+    "chokidar": "^2.1.5"
+  }
+}
