@@ -1,138 +1,12 @@
 const fs = require('fs');
 const pathModule = require('path');
+const VERBOSE = true;
 
-const importCache = {};
+const cachedImports = {};
 
-const getImport = path => {
-  return new Promise((resolve, reject) => {
-    if (importCache[path]) {
-      return resolve(importCache[path]);
-    }
-
-    fs.readFile(path, (err, toImport) => {
-      if (err) {
-        return reject(err);
-      }
-
-      const replace = toImport.toString();
-      importCache[path] = replace;
-      return resolve(replace);
-    });
-  });
-};
-
-const importPath = path => {
-  return `./_imports/${path}`;
-};
-
-const compileFile = async (filePath, publicPath, holdInMemory = false) => {
-  // ADD FOLDER PATH IN
-  return new Promise((resolve, reject) => {
-    fs.readFile(filePath, async (err, file) => {
-      if (err) {
-        return reject(`File ${filePath} doesn't exist`);
-      }
-
-      let fileBody = file.toString();
-      let updated = false;
-      let m;
-
-      try {
-        const basicImport = /<lil-import href="(.*)" \/>/gm;
-        while ((m = basicImport.exec(fileBody)) !== null) {
-          if (m.index === basicImport.lastIndex) {
-            basicImport.lastIndex++;
-          }
-
-          const [find, path] = m;
-          const replace = await getImport(importPath(path));
-          fileBody = fileBody.replace(find, replace);
-          updated = true;
-        }
-
-        if (holdInMemory) {
-          importCache[filePath] = fileBody;
-        }
-
-        const complexImport = /<lil-import href="(.*)">(.*)<\/lil-import>/gms;
-        while ((m = complexImport.exec(fileBody)) !== null) {
-          if (m.index === complexImport.lastIndex) {
-            complexImport.lastIndex++;
-          }
-
-          const [find, path, content] = m;
-          let replace = await getImport(importPath(path));
-
-          const slot = /<lil-slot \/>/gm;
-          replace = replace.replace(slot, content);
-
-          fileBody = fileBody.replace(find, replace);
-          updated = true;
-        }
-      } catch (e) {
-        return reject();
-      }
-
-      if (!holdInMemory) {
-        fs.writeFile(publicPath, fileBody, () => {
-          console.log(`${updated ? 'Compiled' : 'Copied'} ${publicPath}`);
-          return resolve();
-        });
-      }
-    });
-  });
-};
-
-const compileFolder = async (folderPath, publicDirPath, recursive = false) => {
-  if (publicDirPath) {
-    await createFolder(pathModule.resolve(publicDirPath));
-  }
-
-  new Promise((resolve, reject) => {
-    fs.readdir(folderPath, async (err, files) => {
-      if (err) {
-        return reject(`Folder: ${folderPath} doesn't exist`);
-      }
-
-      await Promise.all(
-        files
-          .filter(
-            x =>
-              !x.startsWith('.git') &&
-              !x.startsWith('_imports') &&
-              !x.startsWith('public')
-          )
-          .map(async localFilePath => {
-            let fullPath = pathModule.resolve(folderPath, localFilePath);
-            const publicPath = pathModule.resolve(
-              `./public/`,
-              folderPath,
-              localFilePath
-            );
-
-            if (localFilePath.endsWith('.html')) {
-              return compileFile(fullPath, publicPath, !publicDirPath);
-            }
-
-            await fs.stat(fullPath, (err, stat) => {
-              if (stat && stat.isDirectory()) {
-                if (recursive) {
-                  return compileFolder(
-                    `${folderPath}${localFilePath}/`,
-                    `${publicDirPath}${localFilePath}/`,
-                    true
-                  );
-                }
-              } else {
-                return copyFile(fullPath, publicPath);
-              }
-            });
-          })
-      );
-      return resolve();
-    });
-  });
-};
+/**
+ * Utils
+ */
 
 const copyFile = (src, dest) => {
   return new Promise((resolve, reject) => {
@@ -140,7 +14,7 @@ const copyFile = (src, dest) => {
       if (err) {
         return reject(err);
       } else {
-        console.log(`Copied ${src}`);
+        VERBOSE && console.log(`Copied ${src}`);
         resolve();
       }
     });
@@ -161,13 +35,170 @@ const createFolder = path => {
   });
 };
 
+const readDir = path => {
+  return new Promise((resolve, reject) => {
+    fs.readdir(path, (err, data) => (err ? reject(err) : resolve(data)));
+  });
+};
+
+const readFile = path => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, (err, data) =>
+      err ? reject(err) : resolve(data.toString())
+    );
+  });
+};
+
+const writeFile = (path, body) => {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(path, body, err => {
+      if (err) {
+        return reject(err);
+      }
+
+      VERBOSE && console.log(`Saved ${path}`);
+      return resolve();
+    });
+  });
+};
+
+/**
+ * Real code
+ */
+
+const prepareImports = async importsDir => {
+  const fileNames = await readDir(importsDir);
+  const bodies = await Promise.all(
+    fileNames.map(localFileName => {
+      return readFile(`${importsDir}${localFileName}`);
+    })
+  );
+
+  fileNames.forEach((fileName, index) => {
+    cachedImports[fileName] = bodies[index];
+  });
+};
+
+const compileImports = async () => {
+  const keys = Object.keys(cachedImports);
+  keys.forEach(key => {
+    cachedImports[key] = compileBody(cachedImports[key]);
+  });
+};
+
+const simpleSlotsToContent = (body, content = '') => {
+  let m;
+  const complexSlot = /<lil-slot>(.*)<\/lil-slot>/gms;
+  while ((m = complexSlot.exec(body)) !== null) {
+    if (m.index === complexSlot.lastIndex) {
+      complexSlot.lastIndex++;
+    }
+
+    const [find, fallback] = m;
+    body = body.replace(find, content || fallback || '');
+  }
+
+  body = body.replace(/<lil-slot \/>/gm, content);
+  return body;
+};
+
+const compileBody = body => {
+  const basicImport = /<lil-import href="(.*)" \/>/gm;
+  while ((m = basicImport.exec(body)) !== null) {
+    if (m.index === basicImport.lastIndex) {
+      basicImport.lastIndex++;
+    }
+
+    const [find, key] = m;
+    let replace = cachedImports[key] || '';
+
+    // Remove empty slots
+    replace = simpleSlotsToContent(replace, '');
+
+    body = body.replace(find, replace);
+  }
+
+  const complexImport = /<lil-import href="(.*)">(.*)<\/lil-import>/gms;
+  while ((m = complexImport.exec(body)) !== null) {
+    if (m.index === complexImport.lastIndex) {
+      complexImport.lastIndex++;
+    }
+
+    const [find, key, content] = m;
+    let replace = cachedImports[key] || '';
+    replace = simpleSlotsToContent(replace, content);
+
+    body = body.replace(find, replace);
+  }
+
+  return body;
+};
+
+const compileFolder = async (folderPath, publicDirPath) => {
+  if (publicDirPath) {
+    await createFolder(pathModule.resolve(publicDirPath));
+  }
+
+  new Promise((resolve, reject) => {
+    fs.readdir(folderPath, async (err, files) => {
+      if (err) {
+        return reject(`Folder: ${folderPath} doesn't exist`);
+      }
+
+      await Promise.all(
+        files
+          .filter(
+            x =>
+              !x.startsWith('.git') &&
+              !x.startsWith('node_modules') &&
+              !x.startsWith('src') &&
+              !x.startsWith('_imports') &&
+              !x.startsWith('public')
+          )
+          .map(async localFilePath => {
+            let fullPath = pathModule.resolve(folderPath, localFilePath);
+            const publicPath = pathModule.resolve(
+              `./public/`,
+              folderPath,
+              localFilePath
+            );
+
+            if (localFilePath.endsWith('.html')) {
+              return readFile(fullPath)
+                .then(body => {
+                  return compileBody(body);
+                })
+                .then(body => {
+                  return writeFile(publicPath, body);
+                });
+            }
+
+            await fs.stat(fullPath, (err, stat) => {
+              if (stat && stat.isDirectory()) {
+                return compileFolder(
+                  `${folderPath}${localFilePath}/`,
+                  `${publicDirPath}${localFilePath}/`,
+                  true
+                );
+              } else {
+                return copyFile(fullPath, publicPath);
+              }
+            });
+          })
+      );
+      return resolve();
+    });
+  });
+};
+
 (async () => {
   try {
-    // clear public folder
-    // check for _imports
+    // TODO: clear public folder
+    // TODO: check for _imports
 
-    await compileFolder('./_imports/', '');
-    await compileFolder('./', './public/', true);
+    await prepareImports('./_imports/');
+    await compileImports();
+    await compileFolder('./', './public/');
   } catch (e) {
     console.log(e);
   }
