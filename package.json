@@ -4,8 +4,10 @@
   "description": "",
   "main": "lil-import.js",
   "scripts": {
-    "start": "npm run start:watch",
-    "start:watch": "node lil-import.js"
+    "start": "node lil-import.js",
+    "dev": "concurrently \"npm:dev:watch\" \"npm:dev:server\"",
+    "dev:watch": "node lil-import.js --lil-watch",
+    "dev:server": "serve public"
   },
   "repository": {
     "type": "git",
@@ -18,7 +20,9 @@
     "url": "https://github.com/trys/lil-ssg/issues"
   },
   "homepage": "https://github.com/trys/lil-ssg#readme",
-  "dependencies": {
-    "chokidar": "^2.1.5"
+  "devDependencies": {
+    "chokidar": "^2.1.5",
+    "concurrently": "^4.1.0",
+    "serve": "^11.0.0"
   }
 }

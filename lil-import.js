@@ -2,11 +2,9 @@ const fs = require('fs');
 const pathModule = require('path');
 const chokidar = require('chokidar');
 const { performance } = require('perf_hooks');
+
 const VERBOSE = true;
-
 const cachedImports = {};
-
-// TODO: use this in the compileFolder bit
 const excludedFolders = ['.git', 'node_modules', 'src', '_imports', 'public'];
 
 /**
@@ -84,7 +82,7 @@ const clearPublicFolder = async () => {
   return deleteFolder('./public/');
 };
 
-const getAllHTMLFiles = async path => {
+const getAllHTMLFiles = path => {
   const files = [];
 
   if (fs.existsSync(path)) {
@@ -93,14 +91,14 @@ const getAllHTMLFiles = async path => {
         return;
       }
 
-      if (!file.endsWith('.html')) {
-        return;
-      }
-
       const newPath = path + '/' + file;
       if (fs.lstatSync(newPath).isDirectory()) {
-        getAllHTMLFiles(newPath);
+        files.push(...getAllHTMLFiles(newPath));
       } else {
+        if (!file.endsWith('.html')) {
+          return;
+        }
+
         files.push(newPath);
       }
     });
@@ -194,14 +192,9 @@ const compileFolder = async (folderPath, publicDirPath) => {
 
       Promise.all(
         files
-          .filter(
-            x =>
-              !x.startsWith('.git') &&
-              !x.startsWith('node_modules') &&
-              !x.startsWith('src') &&
-              !x.startsWith('_imports') &&
-              !x.startsWith('public')
-          )
+          .filter(x => {
+            return !excludedFolders.find(y => x.startsWith(y));
+          })
           .map(async localFilePath => {
             let fullPath = pathModule.resolve(folderPath, localFilePath);
             const publicPath = pathModule.resolve(
@@ -270,16 +263,18 @@ const compileFiles = async () => {
   }
 };
 
-// (async () => {
-//   await compileFiles();
-// })();
-
+/**
+ * The entry point
+ */
 (async () => {
   await compileFiles();
 
-  const files = await getAllHTMLFiles('.');
-  console.log(`Watching ${files.length} file${files.length !== 1 ? 's' : ''}`);
+  if (process.argv.includes('--lil-watch')) {
+    const files = await getAllHTMLFiles('.');
+    console.log(
+      `Watching ${files.length} file${files.length !== 1 ? 's' : ''}`
+    );
 
-  // './**/*.html'
-  chokidar.watch(files, {}).on('change', compileFiles);
+    chokidar.watch(files, {}).on('change', compileFiles);
+  }
 })();
