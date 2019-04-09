@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "bin": {
-    "lil-ssg": "node index.js"
+    "lil-ssg": "./index.js"
   },
   "scripts": {
     "start": "node index.js",
