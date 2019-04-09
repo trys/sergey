@@ -5,7 +5,6 @@ const { performance } = require('perf_hooks');
 /**
  * Environment varibales
  */
-
 const getEnv = key =>
   (process.argv.find(x => x.startsWith(key)) || '').replace(key, '');
 const isWatching = process.argv.includes('--watch');
@@ -18,7 +17,7 @@ const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
 const OUTPUT_LOCAL = getEnv('--output=') || 'public';
 const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
 
-const VERBOSE = true;
+const VERBOSE = false;
 const cachedImports = {};
 const excludedFolders = [
   '.git',
@@ -308,7 +307,9 @@ const compileFiles = async () => {
       `Watching ${files.length} file${files.length !== 1 ? 's' : ''}`
     );
 
-    chokidar.watch(files, {}).on('change', compileFiles);
+    chokidar.watch(files, {}).on('change', async (path) => {
+      await compileFiles();
+    });
 
     connect()
       .use(serveStatic(OUTPUT))
