@@ -155,7 +155,7 @@ const compileImports = async () => {
 
 const compileSlots = (body, content = '') => {
   let m;
-  const complexSlot = /<lil-slot>(.*)<\/lil-slot>/gms;
+  const complexSlot = /<sergey-slot>(.*)<\/sergey-slot>/gms;
   while ((m = complexSlot.exec(body)) !== null) {
     if (m.index === complexSlot.lastIndex) {
       complexSlot.lastIndex++;
@@ -165,12 +165,12 @@ const compileSlots = (body, content = '') => {
     body = body.replace(find, content || fallback || '');
   }
 
-  body = body.replace(/<lil-slot \/>/gm, content);
+  body = body.replace(/<sergey-slot \/>/gm, content);
   return body;
 };
 
 const compileBody = body => {
-  const basicImport = /<lil-import src="(.*)" \/>/gm;
+  const basicImport = /<sergey-import src="(.*)" \/>/gm;
   while ((m = basicImport.exec(body)) !== null) {
     if (m.index === basicImport.lastIndex) {
       basicImport.lastIndex++;
@@ -186,7 +186,7 @@ const compileBody = body => {
     body = body.replace(find, replace);
   }
 
-  const complexImport = /<lil-import src="(.*)">(.*)<\/lil-import>/gms;
+  const complexImport = /<sergey-import src="(.*)">(.*)<\/sergey-import>/gms;
   while ((m = complexImport.exec(body)) !== null) {
     if (m.index === complexImport.lastIndex) {
       complexImport.lastIndex++;
@@ -314,7 +314,7 @@ const compileFiles = async () => {
     connect()
       .use(serveStatic(OUTPUT))
       .listen(8080, function() {
-        console.log('Server running on 8080...');
+        console.log('Sergey running on http://localhost:8080');
       });
   }
 })();

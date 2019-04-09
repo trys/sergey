@@ -1,10 +1,10 @@
 {
-  "name": "lil-ssg",
+  "name": "sergey",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "bin": {
-    "lil-ssg": "./index.js"
+    "sergey": "./index.js"
   },
   "scripts": {
     "start": "node index.js --root=./example/",
@@ -12,15 +12,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/trys/lil-ssg.git"
+    "url": "git+https://github.com/trys/sergey.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/trys/lil-ssg/issues"
+    "url": "https://github.com/trys/sergey/issues"
   },
-  "homepage": "https://github.com/trys/lil-ssg#readme",
+  "homepage": "https://github.com/trys/sergey#readme",
   "dependencies": {
     "chokidar": "^2.1.5",
     "connect": "^3.6.6",
