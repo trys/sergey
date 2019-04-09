@@ -1,11 +1,23 @@
 const fs = require('fs');
-const pathModule = require('path');
 const chokidar = require('chokidar');
 const { performance } = require('perf_hooks');
 
 const VERBOSE = true;
+const ROOT = './';
+const IMPORTS_LOCAL = `_imports`;
+const PUBLIC_LOCAL = 'public';
+const PUBLIC = `${ROOT}${PUBLIC_LOCAL}/`;
+const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
+
 const cachedImports = {};
-const excludedFolders = ['.git', 'node_modules', 'src', '_imports', 'public'];
+const excludedFolders = [
+  '.git',
+  'node_modules',
+  'package.json',
+  'package-lock.json',
+  IMPORTS_LOCAL,
+  PUBLIC_LOCAL
+];
 
 /**
  * Utils
@@ -79,7 +91,7 @@ const clearPublicFolder = async () => {
     }
   };
 
-  return deleteFolder('./public/');
+  return deleteFolder(PUBLIC);
 };
 
 const getAllHTMLFiles = path => {
@@ -179,15 +191,18 @@ const compileBody = body => {
   return body;
 };
 
-const compileFolder = async (folderPath, publicDirPath) => {
-  if (publicDirPath) {
-    await createFolder(pathModule.resolve(publicDirPath));
+const compileFolder = async (localFolder, localPublicFolder) => {
+  const fullFolderPath = `${ROOT}${localFolder}`;
+  const fullPublicPath = `${ROOT}${localPublicFolder}`;
+
+  if (localPublicFolder) {
+    await createFolder(fullPublicPath);
   }
 
   return new Promise((resolve, reject) => {
-    fs.readdir(folderPath, async (err, files) => {
+    fs.readdir(fullFolderPath, async (err, files) => {
       if (err) {
-        return reject(`Folder: ${folderPath} doesn't exist`);
+        return reject(`Folder: ${fullFolderPath} doesn't exist`);
       }
 
       Promise.all(
@@ -196,37 +211,28 @@ const compileFolder = async (folderPath, publicDirPath) => {
             return !excludedFolders.find(y => x.startsWith(y));
           })
           .map(async localFilePath => {
-            let fullPath = pathModule.resolve(folderPath, localFilePath);
-            const publicPath = pathModule.resolve(
-              `./public/`,
-              folderPath,
-              localFilePath
-            );
+            const fullFilePath = `${fullFolderPath}${localFilePath}`;
+            const fullPublicFilePath = `${fullPublicPath}${localFilePath}`;
 
             if (localFilePath.endsWith('.html')) {
-              return readFile(fullPath)
-                .then(body => {
-                  return compileBody(body);
-                })
-                .then(body => {
-                  return writeFile(publicPath, body);
-                });
+              return readFile(fullFilePath)
+                .then(compileBody)
+                .then(body => writeFile(fullPublicFilePath, body));
             }
 
             return new Promise((resolve, reject) => {
-              fs.stat(fullPath, async (err, stat) => {
+              fs.stat(fullFilePath, async (err, stat) => {
                 if (err) {
                   return reject(err);
                 }
 
                 if (stat && stat.isDirectory()) {
                   await compileFolder(
-                    `${folderPath}${localFilePath}/`,
-                    `${publicDirPath}${localFilePath}/`,
-                    true
+                    `${localFolder}${localFilePath}/`,
+                    `${PUBLIC_LOCAL}/${localFolder}${localFilePath}/`
                   );
                 } else {
-                  await copyFile(fullPath, publicPath);
+                  await copyFile(fullFilePath, fullPublicFilePath);
                 }
                 return resolve();
               });
@@ -241,9 +247,9 @@ const compileFolder = async (folderPath, publicDirPath) => {
 
 const compileFiles = async () => {
   try {
-    await readDir('./_imports/');
+    await readDir(IMPORTS);
   } catch (e) {
-    console.error('No ./_imports/ folder found');
+    console.error(`No ${IMPORTS} folder found`);
     return;
   }
 
@@ -251,9 +257,9 @@ const compileFiles = async () => {
     const start = performance.now();
 
     await clearPublicFolder();
-    await prepareImports('./_imports/');
+    await prepareImports(IMPORTS);
     await compileImports();
-    await compileFolder('./', './public/');
+    await compileFolder('', `${PUBLIC_LOCAL}/`);
 
     const end = performance.now();
 
