@@ -171,13 +171,14 @@ const compileSlots = (body, content = '') => {
 };
 
 const compileBody = body => {
-  const basicImport = /<lil-import href="(.*)" \/>/gm;
+  const basicImport = /<lil-import src="(.*)" \/>/gm;
   while ((m = basicImport.exec(body)) !== null) {
     if (m.index === basicImport.lastIndex) {
       basicImport.lastIndex++;
     }
 
-    const [find, key] = m;
+    let [find, key] = m;
+    key = key.endsWith('.html') ? key : `${key}.html`
     let replace = cachedImports[key] || '';
 
     // Remove empty slots
@@ -186,13 +187,14 @@ const compileBody = body => {
     body = body.replace(find, replace);
   }
 
-  const complexImport = /<lil-import href="(.*)">(.*)<\/lil-import>/gms;
+  const complexImport = /<lil-import src="(.*)">(.*)<\/lil-import>/gms;
   while ((m = complexImport.exec(body)) !== null) {
     if (m.index === complexImport.lastIndex) {
       complexImport.lastIndex++;
     }
 
-    const [find, key, content] = m;
+    let [find, key, content] = m;
+    key = key.endsWith('.html') ? key : `${key}.html`
     let replace = cachedImports[key] || '';
     replace = compileSlots(replace, content);
 
@@ -283,7 +285,7 @@ const compileFiles = async () => {
 /**
  * The entry point
  */
-(async () => {
+(async () => {  
   if (!OUTPUT.startsWith('./')) {
     console.error('DANGER! Make sure you start the root with a ./');
     return;

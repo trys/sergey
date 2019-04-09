@@ -7,8 +7,8 @@
     "lil-ssg": "./index.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js --watch"
+    "start": "node index.js --root=./example/",
+    "dev": "node index.js --watch --root=./example/"
   },
   "repository": {
     "type": "git",
