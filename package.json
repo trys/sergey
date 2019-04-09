@@ -21,7 +21,7 @@
     "url": "https://github.com/trys/lil-ssg/issues"
   },
   "homepage": "https://github.com/trys/lil-ssg#readme",
-  "devDependencies": {
+  "dependencies": {
     "chokidar": "^2.1.5",
     "connect": "^3.6.6",
     "serve-static": "^1.13.2"

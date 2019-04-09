@@ -22,6 +22,7 @@ const VERBOSE = true;
 const cachedImports = {};
 const excludedFolders = [
   '.git',
+  '.DS_Store',
   'node_modules',
   'package.json',
   'package-lock.json',
