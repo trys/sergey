@@ -255,11 +255,6 @@ const compileFolder = async (localFolder, localPublicFolder) => {
 };
 
 const compileFiles = async () => {
-  if (!OUTPUT.startsWith('./')) {
-    console.error('DANGER! Make sure you start the root with a ./');
-    return;
-  }
-
   try {
     await readDir(IMPORTS);
   } catch (e) {
@@ -287,6 +282,16 @@ const compileFiles = async () => {
  * The entry point
  */
 (async () => {
+  if (!OUTPUT.startsWith('./')) {
+    console.error('DANGER! Make sure you start the root with a ./');
+    return;
+  }
+
+  if (!ROOT.endsWith('/')) {
+    console.error('Make sure you end the root with a /');
+    return;
+  }
+
   await compileFiles();
 
   if (isWatching) {
