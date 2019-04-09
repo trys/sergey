@@ -2,12 +2,10 @@
   "name": "lil-ssg",
   "version": "1.0.0",
   "description": "",
-  "main": "lil-import.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node lil-import.js",
-    "dev": "concurrently \"npm:dev:watch\" \"npm:dev:server\"",
-    "dev:watch": "node lil-import.js --lil-watch",
-    "dev:server": "serve public"
+    "start": "node index.js --root=./example/",
+    "dev": "node index.js --watch"
   },
   "repository": {
     "type": "git",
@@ -22,7 +20,7 @@
   "homepage": "https://github.com/trys/lil-ssg#readme",
   "devDependencies": {
     "chokidar": "^2.1.5",
-    "concurrently": "^4.1.0",
-    "serve": "^11.0.0"
+    "connect": "^3.6.6",
+    "serve-static": "^1.13.2"
   }
 }

@@ -1,14 +1,23 @@
 const fs = require('fs');
-const chokidar = require('chokidar');
 const { performance } = require('perf_hooks');
 
-const VERBOSE = true;
-const ROOT = './';
-const IMPORTS_LOCAL = `_imports`;
-const PUBLIC_LOCAL = 'public';
-const PUBLIC = `${ROOT}${PUBLIC_LOCAL}/`;
+/**
+ * Environment varibales
+ */
+
+const getEnv = key =>
+  (process.argv.find(x => x.startsWith(key)) || '').replace(key, '');
+const isWatching = process.argv.includes('--watch');
+
+const ROOT = getEnv('--root=') || './';
+
+const IMPORTS_LOCAL = getEnv('--imports=') || '_imports';
 const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
 
+const OUTPUT_LOCAL = getEnv('--output=') || 'public';
+const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
+
+const VERBOSE = true;
 const cachedImports = {};
 const excludedFolders = [
   '.git',
@@ -16,7 +25,7 @@ const excludedFolders = [
   'package.json',
   'package-lock.json',
   IMPORTS_LOCAL,
-  PUBLIC_LOCAL
+  OUTPUT_LOCAL
 ];
 
 /**
@@ -76,7 +85,7 @@ const writeFile = (path, body) => {
   });
 };
 
-const clearPublicFolder = async () => {
+const clearOutputFolder = async () => {
   const deleteFolder = path => {
     if (fs.existsSync(path)) {
       fs.readdirSync(path).forEach(function(file, index) {
@@ -91,7 +100,7 @@ const clearPublicFolder = async () => {
     }
   };
 
-  return deleteFolder(PUBLIC);
+  return deleteFolder(OUTPUT);
 };
 
 const getAllHTMLFiles = path => {
@@ -229,7 +238,7 @@ const compileFolder = async (localFolder, localPublicFolder) => {
                 if (stat && stat.isDirectory()) {
                   await compileFolder(
                     `${localFolder}${localFilePath}/`,
-                    `${PUBLIC_LOCAL}/${localFolder}${localFilePath}/`
+                    `${OUTPUT_LOCAL}/${localFolder}${localFilePath}/`
                   );
                 } else {
                   await copyFile(fullFilePath, fullPublicFilePath);
@@ -246,6 +255,11 @@ const compileFolder = async (localFolder, localPublicFolder) => {
 };
 
 const compileFiles = async () => {
+  if (!OUTPUT.startsWith('./')) {
+    console.error('DANGER! Make sure you start the root with a ./');
+    return;
+  }
+
   try {
     await readDir(IMPORTS);
   } catch (e) {
@@ -256,10 +270,10 @@ const compileFiles = async () => {
   try {
     const start = performance.now();
 
-    await clearPublicFolder();
+    await clearOutputFolder();
     await prepareImports(IMPORTS);
     await compileImports();
-    await compileFolder('', `${PUBLIC_LOCAL}/`);
+    await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();
 
@@ -275,12 +289,22 @@ const compileFiles = async () => {
 (async () => {
   await compileFiles();
 
-  if (process.argv.includes('--lil-watch')) {
+  if (isWatching) {
+    const chokidar = require('chokidar');
+    const connect = require('connect');
+    const serveStatic = require('serve-static');
+
     const files = await getAllHTMLFiles('.');
     console.log(
       `Watching ${files.length} file${files.length !== 1 ? 's' : ''}`
     );
 
     chokidar.watch(files, {}).on('change', compileFiles);
+
+    connect()
+      .use(serveStatic(OUTPUT))
+      .listen(8080, function() {
+        console.log('Server running on 8080...');
+      });
   }
 })();
