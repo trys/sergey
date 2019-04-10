@@ -1,7 +1,7 @@
 {
   "name": "sergey",
   "version": "1.0.0",
-  "description": "",
+  "description": "The little SSG",
   "main": "index.js",
   "bin": {
     "sergey": "./index.js"
