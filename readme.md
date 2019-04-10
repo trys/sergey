@@ -9,3 +9,11 @@ If you’ve ever had to make a change to every header on a totally static websit
 - [Read the getting started guide](https://sergey.cool/#get-started)
 - [Slots explanation](https://sergey.cool/slots/)
 - [Command line options](https://sergey.cool/options/)
+
+```
+$ npm install sergey
+
+$ sergey
+
+$ sergey --watch
+```
