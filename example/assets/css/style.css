@@ -43,6 +43,7 @@ iframe {
 
 :root {
   --color-copy: #16355f;
+  --color-light: #fafafa;
 }
 
 /* Typography */
@@ -51,6 +52,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   color: var(--color-copy);
+  background-color: var(--color-light);
   font: 400 16px/1.625 'SF Pro Text', -apple-system, BlinkMacSystemFont,
     Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji,
     Segoe UI Emoji, Segoe UI Symbol;
@@ -81,11 +83,18 @@ p {
   margin: 0;
 }
 
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+}
+
 .content * + * {
   margin-top: 1.5rem;
 }
 
-.content {
+.content,
+.content h2 {
   counter-reset: contentCounter;
 }
 
@@ -115,6 +124,12 @@ code {
   padding: 0.1em;
 }
 
+.content hr {
+  margin: 2em 0;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 /* Grid */
 
 .wrapper {
@@ -132,12 +147,18 @@ code {
 /* Header */
 
 [role='banner'] {
-  background: #fafafa;
+  background: #fff
+    url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzYiIGhlaWdodD0iNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGgxMkw2IDEyIDAgMHptMTggMzZoMTJsLTYgMTItNi0xMnoiIGZpbGw9IiNFQkY0RjEiIGZpbGwtcnVsZT0ibm9uemVybyIgZmlsbC1vcGFjaXR5PSIuNSIvPjwvc3ZnPg==);
 }
 
 [role='banner'] img {
   margin: 0 auto;
   max-width: 75%;
+}
+
+[role='banner'] nav a {
+  margin: 0 0.5em;
+  font-size: 0.8em;
 }
 
 /* Footer */

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <sergey-import src="head" />
+</head>
+
+<body>
+  <sergey-import src="header">
+    <p>Slots are a very useful way to re-use components. Let's explore them a little further...</p>
+  </sergey-import>
+
+  <main class="insulate">
+    <div class="wrapper content">
+      <h2>Getting started with slots</h2>
+      <p>Any <code>_imports</code> file can have a special tag inside called a <code>&lt;sergey-slot /&gt;</code>. This slot provides a neat way to inject content within the component.</p>
+
+      <p counter>Let's take a <code>&lt;head&gt;</code> of the page example. Here's our markup:</p>
+
+      <script src="https://gist.github.com/trys/5397178bb27024beefa8a6e2646b4f99.js"></script>
+
+      <p>Our SEO senses tell us that a page title per page would be a good thing. But now we're using Sergey, all of the <code>&lt;title&gt;</code> tags are stored away in the one file.</p>
+
+      <p counter>To kick off, we can swap in a <code>&lt;sergey-slot /&gt;</code> tag:</p>
+
+      <script src="https://gist.github.com/trys/d7601ceb6fe2b7edba855089065570ad.js"></script>
+
+      <p counter>To fill that slot with content, we alter our original <code>&lt;sergey-import /&gt;</code> tag in a very HTML-y way:</p>
+
+      <script src="https://gist.github.com/trys/2c7489ed60cb4059041d18c20e8f1651.js"></script>
+
+      <p counter>That's it! If you pass in a title (or any other tags), it'll render it in place of the slot.</p>
+
+      <hr />
+
+      <h2 id="default-slots">Default slots</h2>
+
+      <p>If you want some default content to render when nothing's passed into the slot, expand the <code>&lt;sergey-slot /&gt;</code> tag to include that content:</p>
+
+      <script src="https://gist.github.com/trys/4fcabdac892eebc1615e8a851824e0a8.js"></script>
+
+      <hr />
+
+      <h2>Page templates with slots</h2>
+
+      <p>One neat thing you can do with slots is build page templates!</p>
+
+      <p counter>Let's create <code>_imports/template.html</code> file:</p>
+
+      <script src="https://gist.github.com/trys/ca0aec8f2200ee1c334fa05304631b9a.js"></script>
+
+      <p>Note that _imports can include other imports! This template pulls in a head (with a slot), header and a footer. It also leaves space for a slot.</p>
+
+      <p counter>In our <code>index.html</code> file, instead of calling in all those imports individually, we can simply wrap our page-specific content in one <code>&lt;sergey-import /&gt;</code> and it'll get squirted into the template. Look how tiny our page has become!</p>
+
+      <script src="https://gist.github.com/trys/6fa6ce3ad6bc04b62dfdf731b9865de4.js"></script>
+
+      <p counter>To create a new page, all you need to do is copy/paste those three lines into a new file, and start writing!</p>
+
+    </div>
+  </main>
+
+  <sergey-import src="footer" />
+</body>
+</html>
