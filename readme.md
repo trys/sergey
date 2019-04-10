@@ -10,10 +10,12 @@ If you’ve ever had to make a change to every header on a totally static websit
 - [Slots explanation](https://sergey.cool/slots/)
 - [Command line options](https://sergey.cool/options/)
 
-```
+```bash
 $ npm install sergey
 
+# Build the site
 $ sergey
 
+# Run Sergey in dev mode
 $ sergey --watch
 ```
