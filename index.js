@@ -191,12 +191,12 @@ const compileSlots = (body, content = '') => {
     body = body.replace(find, content || fallback || '');
   }
 
-  body = body.replace(/<sergey-slot \/>/gm, content);
+  body = body.replace(/<sergey-slot\s?\/>/gm, content);
   return body;
 };
 
 const compileBody = body => {
-  const basicImport = /<sergey-import src="([a-z0-9\.]*)" \/>/gm;
+  const basicImport = /<sergey-import src="([a-z0-9\.]*)"\s?\/>/gm;
   while ((m = basicImport.exec(body)) !== null) {
     if (m.index === basicImport.lastIndex) {
       basicImport.lastIndex++;
