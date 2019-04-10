@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <sergey-import src="head" />
+</head>
+
+<body>
+  <sergey-import src="header">
+    
+  </sergey-import>
+
+  <main class="insulate">
+    <div class="wrapper content">
+      <h2>Command options</h2>
+
+      <p>All of these options can be passed into the default <code>sergey</code> command.</p>
+      
+      <p counter><code>--watch</code></p>
+      <p>This runs Sergey in dev mode, and opens up a server at <code>http://localhost:8080</code>. Any changes you make to local files will trigger a recompile and be ready for you on page refresh.</p>
+
+      <p>Top tip: set the <strong>start</strong> command to run <code>sergey</code>, and <strong>dev</strong> to run <code>sergey --watch</code>. Then you can run <code>npm start</code> and <code>npm run dev</code> respectively.</p>
+
+      <p counter><code>--root=./subfolder/</code></p>
+      <p>By default, Sergey runs in the same directory as your <code>package.json</code> file. You can override that with this command. Be sure to start it with a dot, and end it with a slash.</p>
+
+      <p counter><code>--output=dist</code></p>
+      <p>A <code>public</code> folder will be created to hold all the built files, unless you specify otherwise with this option.</p>
+
+      <p counter><code>--imports=partials</code></p>
+      <p>Sergey uses an <code>_imports</code> folder by default, but this argument lets you change that.</p>
+
+    </div>
+  </main>
+
+  <sergey-import src="footer" />
+</body>
+
+</html>
