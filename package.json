@@ -1,6 +1,6 @@
 {
   "name": "sergey",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The little SSG",
   "main": "index.js",
   "bin": {
