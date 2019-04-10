@@ -129,6 +129,32 @@ const getAllHTMLFiles = path => {
   return files;
 };
 
+const getFilesToWatch = path => {
+  const files = [];
+  const filesToIgnore = [...excludedFolders];
+  const importIndex = filesToIgnore.indexOf(IMPORTS_LOCAL);
+  if (importIndex !== -1) {
+    filesToIgnore.splice(importIndex, 1);
+  }
+
+  if (fs.existsSync(path)) {
+    fs.readdirSync(path).forEach(function(file, index) {
+      if (filesToIgnore.find(x => file.startsWith(x))) {
+        return;
+      }
+
+      const newPath = path + '/' + file;
+      if (fs.lstatSync(newPath).isDirectory()) {
+        files.push(...getFilesToWatch(newPath));
+      } else {
+        files.push(newPath);
+      }
+    });
+  }
+
+  return files;
+};
+
 /**
  * Real code
  */
@@ -155,7 +181,7 @@ const compileImports = async () => {
 
 const compileSlots = (body, content = '') => {
   let m;
-  const complexSlot = /<sergey-slot>(.*)<\/sergey-slot>/gms;
+  const complexSlot = /<sergey-slot>(.*?)<\/sergey-slot>/gms;
   while ((m = complexSlot.exec(body)) !== null) {
     if (m.index === complexSlot.lastIndex) {
       complexSlot.lastIndex++;
@@ -170,14 +196,14 @@ const compileSlots = (body, content = '') => {
 };
 
 const compileBody = body => {
-  const basicImport = /<sergey-import src="(.*)" \/>/gm;
+  const basicImport = /<sergey-import src="([a-z0-9\.]*)" \/>/gm;
   while ((m = basicImport.exec(body)) !== null) {
     if (m.index === basicImport.lastIndex) {
       basicImport.lastIndex++;
     }
 
     let [find, key] = m;
-    key = key.endsWith('.html') ? key : `${key}.html`
+    key = key.endsWith('.html') ? key : `${key}.html`;
     let replace = cachedImports[key] || '';
 
     // Remove empty slots
@@ -186,14 +212,14 @@ const compileBody = body => {
     body = body.replace(find, replace);
   }
 
-  const complexImport = /<sergey-import src="(.*)">(.*)<\/sergey-import>/gms;
+  const complexImport = /<sergey-import src="([a-z0-9\.]*)">(.*?)<\/sergey-import>/gms;
   while ((m = complexImport.exec(body)) !== null) {
     if (m.index === complexImport.lastIndex) {
       complexImport.lastIndex++;
     }
 
     let [find, key, content] = m;
-    key = key.endsWith('.html') ? key : `${key}.html`
+    key = key.endsWith('.html') ? key : `${key}.html`;
     let replace = cachedImports[key] || '';
     replace = compileSlots(replace, content);
 
@@ -284,7 +310,7 @@ const compileFiles = async () => {
 /**
  * The entry point
  */
-(async () => {  
+(async () => {
   if (!OUTPUT.startsWith('./')) {
     console.error('DANGER! Make sure you start the root with a ./');
     return;
@@ -302,12 +328,16 @@ const compileFiles = async () => {
     const connect = require('connect');
     const serveStatic = require('serve-static');
 
-    const files = await getAllHTMLFiles('.');
+    const watchRoot = ROOT.endsWith('/')
+      ? ROOT.substring(0, ROOT.length - 1)
+      : ROOT;
+    const files = await getFilesToWatch(watchRoot);
+
     console.log(
       `Watching ${files.length} file${files.length !== 1 ? 's' : ''}`
     );
 
-    chokidar.watch(files, {}).on('change', async (path) => {
+    chokidar.watch(files, {}).on('change', async path => {
       await compileFiles();
     });
 

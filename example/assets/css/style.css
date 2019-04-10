@@ -1,0 +1,139 @@
+body {
+  margin: 0;
+}
+
+blockquote,
+pre,
+ol,
+ul,
+figure {
+  padding: 0;
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+  height: auto;
+  border: none;
+}
+
+article,
+aside,
+figure,
+footer,
+header,
+aside,
+main,
+nav {
+  display: block;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+iframe {
+  border: none;
+}
+
+/* Settings */
+
+:root {
+  --color-copy: #16355f;
+}
+
+/* Typography */
+
+body {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  color: var(--color-copy);
+  font: 400 16px/1.625 'SF Pro Text', -apple-system, BlinkMacSystemFont,
+    Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji,
+    Segoe UI Emoji, Segoe UI Symbol;
+  font-size: calc(16px + (24 - 16) * (100vw - 320px) / (750 - 320));
+}
+
+@media (min-width: 750px) {
+  body {
+    font-size: 25px;
+  }
+}
+
+a {
+  color: inherit;
+}
+
+.center {
+  text-align: center;
+}
+
+h1,
+h2,
+h3,
+h4,
+ul,
+ol,
+p {
+  margin: 0;
+}
+
+.content * + * {
+  margin-top: 1.5rem;
+}
+
+.content {
+  counter-reset: contentCounter;
+}
+
+.content [counter] {
+  position: relative;
+  counter-increment: contentCounter;
+}
+
+.content [counter]:before {
+  content: counter(contentCounter) '. ';
+  font-weight: 600;
+}
+
+@media (min-width: 880px) {
+  .content [counter]:before {
+    position: absolute;
+    margin-right: 1rem;
+    right: 100%;
+    top: 0;
+  }
+}
+
+code {
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+/* Grid */
+
+.wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.insulate {
+  padding-top: 2em;
+  padding-bottom: 2em;
+}
+
+/* Header */
+
+[role='banner'] {
+  background: #fafafa;
+}
+
+[role='banner'] img {
+  margin: 0 auto;
+  max-width: 75%;
+}

@@ -1,6 +1,6 @@
 {
   "name": "sergey",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "The little SSG",
   "main": "index.js",
   "bin": {
@@ -15,7 +15,7 @@
     "url": "git+https://github.com/trys/sergey.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Trys Mudford (https://www.trysmudford.com)",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/trys/sergey/issues"
