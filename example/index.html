@@ -14,6 +14,28 @@
 
   <main class="insulate">
     <div class="wrapper content">
+      <h2 id="installing">Installing</h2>
+      <p>This is the tldr; for those au fait with <code>npm</code> packages</p>
+<pre>
+<code>
+$ npm install sergey<br /><br />
+# Build the site<br />
+$ sergey<br /><br />
+# Run Sergey in dev mode<br />
+$ sergey --watch
+</code>
+</pre>
+
+      <hr />
+
+      <h2 id="what-is-sergey">What is Sergey</h2>
+      <p>Sergey is a <a href="https://www.staticgen.com/">static site generator</a>, albeit, a very basic one. That's intentional. There are some incredible SSG's out there (I'm a big fan of <a href="https://gohugo.io/">Hugo</a>, <a href="https://nuxtjs.org/">Nuxt</a> and <a href="https://www.11ty.io/">11ty</a>).</p>
+      <p>They're all fantastic in their own ways, but also pretty large and in charge. Often when I'm prototyping a website, I don't know if I'll need half the features they offer, nor do I want to spend hours configuring them or reading docs. I just want to get my hands dirty with HTML.</p>
+      <p>Sergey is a no-configuration SSG that will render your HTML, include <a href="/#get-started">partials</a>, and render out <a href="/slots/">slots</a>. It'll compile the files and copy your assets into a <code>public</code> folder ready to be Deployed.</p>
+      <p>Will it do more in the future? Who knows! Perhaps, but if you need to do more, that's probably a good time to look at some of the illustrious SSG's listed above. Feel free to use Sergey as a springboard, a prototyping tool, or a full-blown production generator. It's up to you!</p>
+
+      <hr />
+
       <h2 id="get-started">The Hello, World example</h2>
       <p counter>Our starting point is an <code>index.html</code> file.</p>
 

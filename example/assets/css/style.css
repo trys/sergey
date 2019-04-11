@@ -93,6 +93,10 @@ h3 {
   margin-top: 1.5rem;
 }
 
+.content * + h2 {
+  margin-top: 2.5rem;
+}
+
 .content,
 .content h2 {
   counter-reset: contentCounter;
@@ -122,6 +126,16 @@ code {
   white-space: nowrap;
   background: rgba(0, 0, 0, 0.05);
   padding: 0.1em;
+}
+
+pre {
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.5em;
+}
+
+pre code {
+  background: transparent;
 }
 
 .content hr {
