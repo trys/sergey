@@ -14,17 +14,29 @@
 
   <main class="insulate">
     <div class="wrapper content">
-      <h2 id="installing">Installing</h2>
-      <p>This is the tldr; for those au fait with <code>npm</code> packages</p>
+      <h2 id="quick-start">Quick start</h2>
+      <p>This is the tldr; for those au fait with <code>npm</code> packages. There's step-by-step walkthrough a little <a href="#get-started">further down the page</a>.</p>
 <pre>
 <code>
-$ npm install sergey<br /><br />
-# Build the site<br />
-$ sergey<br /><br />
-# Run Sergey in dev mode<br />
-$ sergey --watch
+$ npm install sergey
 </code>
 </pre>
+
+      <p counter>Add <code>sergey</code> to your start and <code>sergey --watch</code> to your dev scripts in <code>package.json</code>.</p>
+      <p counter>Create an <code>_imports</code> folder, and place a <code>header.html</code> file inside.</p>
+      <p counter>Import it into your other files with <code>&lt;sergey-import src="header" /&gt;</code></p>
+<pre>
+<code>
+$ npm run dev
+</code>
+</pre>
+      <p counter>Sergey will start a dev server and watch for any changes.</p>
+<pre>
+<code>
+$ npm start
+</code>
+</pre>
+<p counter>Sergey will create a <code>public</code> folder ready to deploy.</p>
 
       <hr />
 

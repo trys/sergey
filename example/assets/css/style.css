@@ -132,6 +132,9 @@ pre {
   line-height: 1;
   background: rgba(0, 0, 0, 0.05);
   padding: 0.5em;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scroll: touch;
 }
 
 pre code {
@@ -171,7 +174,7 @@ pre code {
 }
 
 [role='banner'] nav a {
-  margin: 0 0.5em;
+  margin: 0 0.3em;
   font-size: 0.8em;
 }
 
