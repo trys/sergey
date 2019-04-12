@@ -168,7 +168,7 @@ pre code {
     url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzYiIGhlaWdodD0iNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGgxMkw2IDEyIDAgMHptMTggMzZoMTJsLTYgMTItNi0xMnoiIGZpbGw9IiNFQkY0RjEiIGZpbGwtcnVsZT0ibm9uemVybyIgZmlsbC1vcGFjaXR5PSIuNSIvPjwvc3ZnPg==);
 }
 
-[role='banner'] img {
+[role='banner'] .logo {
   margin: 0 auto;
   max-width: 75%;
 }
@@ -183,4 +183,11 @@ pre code {
 [role='contentinfo'] {
   padding-top: 1em;
   padding-bottom: 1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+[role='contentinfo'] .deploy {
+  max-width: 40%;
 }
