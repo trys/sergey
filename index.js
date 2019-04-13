@@ -29,6 +29,17 @@ const excludedFolders = [
   OUTPUT_LOCAL
 ];
 
+const patterns = {
+  whitespace: /^\s+|\s+$/g,
+  templates: /<sergey-template name="([a-z0-9\.]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-z0-9\.]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-z0-9\.]*)"\s?\/>/gm,
+  complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
+  simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
+  complexImports: /<sergey-import src="([a-z0-9\.]*)">(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-z0-9\.]*)"\s?\/>/gm
+};
+
 /**
  * Utils
  */
@@ -179,27 +190,74 @@ const compileImports = async () => {
   });
 };
 
+const formatContent = content => {
+  return content.replace(patterns.whitespace, '');
+};
+
 const compileSlots = (body, content = '') => {
   let m;
-  const complexSlot = /<sergey-slot>(.*?)<\/sergey-slot>/gms;
-  while ((m = complexSlot.exec(body)) !== null) {
-    if (m.index === complexSlot.lastIndex) {
-      complexSlot.lastIndex++;
+
+  // Extract templates first
+  const slots = {
+    default: formatContent(content)
+  };
+
+  // Search content for templates
+  while ((m = patterns.templates.exec(content)) !== null) {
+    if (m.index === patterns.templates.lastIndex) {
+      patterns.templates.lastIndex++;
+    }
+
+    const [find, name, data] = m;
+    if (name !== 'default') {
+      // Remove it from the default content
+      slots.default = slots.default.replace(find, '');
+    }
+
+    // Add it as a named slot
+    slots[name] = formatContent(data);
+  }
+
+  // Complex named slots
+  while ((m = patterns.complexNamedSlots.exec(body)) !== null) {
+    if (m.index === patterns.complexNamedSlots.lastIndex) {
+      patterns.complexNamedSlots.lastIndex++;
+    }
+
+    const [find, name, fallback] = m;
+    body = body.replace(find, slots[name] || fallback || '');
+  }
+
+  // Simple named slots
+  while ((m = patterns.simpleNamedSlots.exec(body)) !== null) {
+    if (m.index === patterns.simpleNamedSlots.lastIndex) {
+      patterns.simpleNamedSlots.lastIndex++;
+    }
+
+    const [find, name] = m;
+    body = body.replace(find, slots[name] || '');
+  }
+
+  // Complex Default slots
+  while ((m = patterns.complexDefaultSlots.exec(body)) !== null) {
+    if (m.index === patterns.complexDefaultSlots.lastIndex) {
+      patterns.complexDefaultSlots.lastIndex++;
     }
 
     const [find, fallback] = m;
-    body = body.replace(find, content || fallback || '');
+    body = body.replace(find, slots.default || fallback || '');
   }
 
-  body = body.replace(/<sergey-slot\s?\/>/gm, content);
+  // Simple default slots
+  body = body.replace(patterns.simpleDefaultSlots, slots.default);
   return body;
 };
 
 const compileBody = body => {
-  const basicImport = /<sergey-import src="([a-z0-9\.]*)"\s?\/>/gm;
-  while ((m = basicImport.exec(body)) !== null) {
-    if (m.index === basicImport.lastIndex) {
-      basicImport.lastIndex++;
+  // Simple imports
+  while ((m = patterns.simpleImports.exec(body)) !== null) {
+    if (m.index === patterns.simpleImports.lastIndex) {
+      patterns.simpleImports.lastIndex++;
     }
 
     let [find, key] = m;
@@ -212,17 +270,18 @@ const compileBody = body => {
     body = body.replace(find, replace);
   }
 
-  const complexImport = /<sergey-import src="([a-z0-9\.]*)">(.*?)<\/sergey-import>/gms;
-  while ((m = complexImport.exec(body)) !== null) {
-    if (m.index === complexImport.lastIndex) {
-      complexImport.lastIndex++;
+  // Complex imports
+  while ((m = patterns.complexImports.exec(body)) !== null) {
+    if (m.index === patterns.complexImports.lastIndex) {
+      patterns.complexImports.lastIndex++;
     }
 
     let [find, key, content] = m;
     key = key.endsWith('.html') ? key : `${key}.html`;
+
+    // Fill out slots
     let replace = cachedImports[key] || '';
     replace = compileSlots(replace, content);
-
     body = body.replace(find, replace);
   }
 
