@@ -31,13 +31,13 @@ const excludedFolders = [
 
 const patterns = {
   whitespace: /^\s+|\s+$/g,
-  templates: /<sergey-template name="([a-z0-9\.]*)">(.*?)<\/sergey-template>/gms,
-  complexNamedSlots: /<sergey-slot name="([a-z0-9\.]*)">(.*?)<\/sergey-slot>/gms,
-  simpleNamedSlots: /<sergey-slot name="([a-z0-9\.]*)"\s?\/>/gm,
+  templates: /<sergey-template name="([a-z0-9-.]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-z0-9-.]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-z0-9-.]*)"\s?\/>/gm,
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
-  complexImports: /<sergey-import src="([a-z0-9\.]*)">(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-z0-9\.]*)"\s?\/>/gm
+  complexImports: /<sergey-import src="([a-z0-9-.]*)">(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-z0-9-.]*)"\s?\/>/gm
 };
 
 /**
@@ -218,6 +218,8 @@ const compileSlots = (body, content = '') => {
     slots[name] = formatContent(data);
   }
 
+  slots.default = formatContent(slots.default);
+
   // Complex named slots
   while ((m = patterns.complexNamedSlots.exec(body)) !== null) {
     if (m.index === patterns.complexNamedSlots.lastIndex) {
@@ -281,6 +283,7 @@ const compileBody = body => {
 
     // Fill out slots
     let replace = cachedImports[key] || '';
+    if (key === 'head-description.html') console.log(find, 123, replace);
     replace = compileSlots(replace, content);
     body = body.replace(find, replace);
   }
