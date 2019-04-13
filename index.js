@@ -283,7 +283,6 @@ const compileBody = body => {
 
     // Fill out slots
     let replace = cachedImports[key] || '';
-    if (key === 'head-description.html') console.log(find, 123, replace);
     replace = compileSlots(replace, content);
     body = body.replace(find, replace);
   }
