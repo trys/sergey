@@ -41,7 +41,7 @@ const patterns = {
 };
 
 /**
- * Utils
+ * FS utils
  */
 const copyFile = (src, dest) => {
   return new Promise((resolve, reject) => {
@@ -167,9 +167,15 @@ const getFilesToWatch = path => {
 };
 
 /**
- * Real code
+ * Helpers
  */
+const formatContent = x => x.replace(patterns.whitespace, '');
+const getKey = key => (key.endsWith('.html') ? key : `${key}.html`);
+const hasImports = x => x.includes('<sergey-import');
 
+/**
+ * #business logic
+ */
 const prepareImports = async importsDir => {
   const fileNames = await readDir(importsDir);
   const bodies = await Promise.all(
@@ -183,20 +189,7 @@ const prepareImports = async importsDir => {
   });
 };
 
-const compileImports = async () => {
-  const keys = Object.keys(cachedImports);
-  keys.forEach(key => {
-    cachedImports[key] = compileBody(cachedImports[key]);
-  });
-};
-
-const formatContent = content => {
-  return content.replace(patterns.whitespace, '');
-};
-
-const compileSlots = (body, content = '') => {
-  let m;
-
+const getSlots = content => {
   // Extract templates first
   const slots = {
     default: formatContent(content)
@@ -220,15 +213,24 @@ const compileSlots = (body, content = '') => {
 
   slots.default = formatContent(slots.default);
 
+  return slots;
+};
+
+const compileSlots = (body, slots) => {
+  let m;
+  let copy;
+
   // Complex named slots
+  copy = body;
   while ((m = patterns.complexNamedSlots.exec(body)) !== null) {
     if (m.index === patterns.complexNamedSlots.lastIndex) {
       patterns.complexNamedSlots.lastIndex++;
     }
 
     const [find, name, fallback] = m;
-    body = body.replace(find, slots[name] || fallback || '');
+    copy = copy.replace(find, slots[name] || fallback || '');
   }
+  body = copy;
 
   // Simple named slots
   while ((m = patterns.simpleNamedSlots.exec(body)) !== null) {
@@ -237,8 +239,9 @@ const compileSlots = (body, content = '') => {
     }
 
     const [find, name] = m;
-    body = body.replace(find, slots[name] || '');
+    copy = copy.replace(find, slots[name] || '');
   }
+  body = copy;
 
   // Complex Default slots
   while ((m = patterns.complexDefaultSlots.exec(body)) !== null) {
@@ -247,15 +250,23 @@ const compileSlots = (body, content = '') => {
     }
 
     const [find, fallback] = m;
-    body = body.replace(find, slots.default || fallback || '');
+    copy = copy.replace(find, slots.default || fallback || '');
   }
+  body = copy;
 
   // Simple default slots
   body = body.replace(patterns.simpleDefaultSlots, slots.default);
+
   return body;
 };
 
-const compileBody = body => {
+const compileTemplate = (body, slots) => {
+  body = compileSlots(body, slots);
+
+  if (!hasImports(body)) {
+    return body;
+  }
+
   // Simple imports
   while ((m = patterns.simpleImports.exec(body)) !== null) {
     if (m.index === patterns.simpleImports.lastIndex) {
@@ -263,11 +274,11 @@ const compileBody = body => {
     }
 
     let [find, key] = m;
-    key = key.endsWith('.html') ? key : `${key}.html`;
-    let replace = cachedImports[key] || '';
+    let replace = cachedImports[getKey(key)] || '';
+    const slots = getSlots('');
 
-    // Remove empty slots
-    replace = compileSlots(replace, '');
+    // Recurse
+    replace = compileTemplate(replace, slots);
 
     body = body.replace(find, replace);
   }
@@ -279,15 +290,22 @@ const compileBody = body => {
     }
 
     let [find, key, content] = m;
-    key = key.endsWith('.html') ? key : `${key}.html`;
+    let replace = cachedImports[getKey(key)] || '';
+    const slots = getSlots(content);
 
-    // Fill out slots
-    let replace = cachedImports[key] || '';
-    replace = compileSlots(replace, content);
+    // Recurse
+    replace = compileTemplate(replace, slots);
+
     body = body.replace(find, replace);
   }
 
   return body;
+};
+
+const compileFile = body => {
+  return compileTemplate(body, {
+    default: ''
+  });
 };
 
 const compileFolder = async (localFolder, localPublicFolder) => {
@@ -315,7 +333,7 @@ const compileFolder = async (localFolder, localPublicFolder) => {
 
             if (localFilePath.endsWith('.html')) {
               return readFile(fullFilePath)
-                .then(compileBody)
+                .then(compileFile)
                 .then(body => writeFile(fullPublicFilePath, body));
             }
 
@@ -357,7 +375,6 @@ const compileFiles = async () => {
 
     await clearOutputFolder();
     await prepareImports(IMPORTS);
-    await compileImports();
     await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();

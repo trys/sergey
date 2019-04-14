@@ -33,14 +33,5 @@
 <meta property="og:image" content="https://sergey.cool/assets/img/og.jpg" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:image" content="https://sergey.cool/assets/img/og.jpg" />
-
-<meta name="description" content="<sergey-slot name="description">The little static site generator</sergey-slot>" />
-<meta property="og:description" content="<sergey-slot name="description">The little static site generator</sergey-slot>" />
-<meta name="twitter:description" content="<sergey-slot name="description">The little static site generator</sergey-slot>" />
-
-<meta name="apple-mobile-web-app-title" content="<sergey-slot />" />
-<meta name="application-name" content="<sergey-slot />" />
-<meta property="og:title" content="<sergey-slot />" />
-<meta property="og:image:alt" content="<sergey-slot />" />
-<meta name="twitter:title" content="<sergey-slot />" />
-<title><sergey-slot /></title>
+<sergey-import src="head-description"><sergey-slot name="description">The little static site generator</sergey-slot></sergey-import>
+<sergey-import src="head-title"><sergey-slot name="title">Default title</sergey-slot></sergey-import>
