@@ -2,7 +2,9 @@
 <html>
 
 <head>
-  <sergey-import src="head">Slots | Sergey | the little SSG</sergey-import>
+  <sergey-import src="head">
+    <sergey-template name="title">Slots | Sergey | the little SSG</sergey-template>
+  </sergey-import>
 </head>
 
 <body>
@@ -41,6 +43,31 @@
 
       <hr />
 
+      <h2 id="named-slots">Named slots</h2>
+
+      <p>The humble slot is great, but sometimes it's handy to pass multiple bits of data into a component. This is where named slots come in.</p>
+      
+      <p>Note, named slots are a more advanced feature, so don't feel you have to rush to use them, only break them out when you need to. They are comprised of two parts:</p>
+
+      <ul>
+        <li><code>&lt;sergey-template name="slotName" /&gt;</code></li>
+        <li><code>&lt;sergey-slot name="slotName" /&gt;</code></li>
+      </ul>
+
+      <p>You can kinda think of these as variables. The template is the 'variable definition' and is used within a <code>sergey-import</code> tag. It's where you define the content that'll get injected into the slot.</p>
+
+      <p>The slot with the name attribute tells Sergey where you'd like to put the content. Top tip, you can have multiple slots per template! This is really handy for meta titles and descriptions.</p>
+
+      <p>Here's a blog preview example. We've defined two slots for the page title and author:</p>
+
+      <script src="https://gist.github.com/trys/c218422bed5fe1ccaa871d97f332f606.js"></script>
+
+      <p>To fill them in, we pass in two templates wherever we import the <code>head.html</code> file:</p>
+      
+      <script src="https://gist.github.com/trys/64f337449e1cb14077981ac67c831da5.js"></script>
+
+      <hr />
+
       <h2>Page templates with slots</h2>
 
       <p>One neat thing you can do with slots is build page templates!</p>
@@ -56,6 +83,8 @@
       <script src="https://gist.github.com/trys/6fa6ce3ad6bc04b62dfdf731b9865de4.js"></script>
 
       <p counter>To create a new page, all you need to do is copy/paste those three lines into a new file, and start writing!</p>
+
+      <p counter>If we really wanted to supercharge this, we could use named slots to control various parts of the template! The skies the limit!</p>
 
     </div>
   </main>

@@ -29,8 +29,19 @@ const excludedFolders = [
   OUTPUT_LOCAL
 ];
 
+const patterns = {
+  whitespace: /^\s+|\s+$/g,
+  templates: /<sergey-template name="([a-z0-9-.]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-z0-9-.]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-z0-9-.]*)"\s?\/>/gm,
+  complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
+  simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
+  complexImports: /<sergey-import src="([a-z0-9-.]*)">(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-z0-9-.]*)"\s?\/>/gm
+};
+
 /**
- * Utils
+ * FS utils
  */
 const copyFile = (src, dest) => {
   return new Promise((resolve, reject) => {
@@ -156,9 +167,15 @@ const getFilesToWatch = path => {
 };
 
 /**
- * Real code
+ * Helpers
  */
+const formatContent = x => x.replace(patterns.whitespace, '');
+const getKey = key => (key.endsWith('.html') ? key : `${key}.html`);
+const hasImports = x => x.includes('<sergey-import');
 
+/**
+ * #business logic
+ */
 const prepareImports = async importsDir => {
   const fileNames = await readDir(importsDir);
   const bodies = await Promise.all(
@@ -172,61 +189,123 @@ const prepareImports = async importsDir => {
   });
 };
 
-const compileImports = async () => {
-  const keys = Object.keys(cachedImports);
-  keys.forEach(key => {
-    cachedImports[key] = compileBody(cachedImports[key]);
-  });
+const getSlots = content => {
+  // Extract templates first
+  const slots = {
+    default: formatContent(content)
+  };
+
+  // Search content for templates
+  while ((m = patterns.templates.exec(content)) !== null) {
+    if (m.index === patterns.templates.lastIndex) {
+      patterns.templates.lastIndex++;
+    }
+
+    const [find, name, data] = m;
+    if (name !== 'default') {
+      // Remove it from the default content
+      slots.default = slots.default.replace(find, '');
+    }
+
+    // Add it as a named slot
+    slots[name] = formatContent(data);
+  }
+
+  slots.default = formatContent(slots.default);
+
+  return slots;
 };
 
-const compileSlots = (body, content = '') => {
+const compileSlots = (body, slots) => {
   let m;
-  const complexSlot = /<sergey-slot>(.*?)<\/sergey-slot>/gms;
-  while ((m = complexSlot.exec(body)) !== null) {
-    if (m.index === complexSlot.lastIndex) {
-      complexSlot.lastIndex++;
+  let copy;
+
+  // Complex named slots
+  copy = body;
+  while ((m = patterns.complexNamedSlots.exec(body)) !== null) {
+    if (m.index === patterns.complexNamedSlots.lastIndex) {
+      patterns.complexNamedSlots.lastIndex++;
+    }
+
+    const [find, name, fallback] = m;
+    copy = copy.replace(find, slots[name] || fallback || '');
+  }
+  body = copy;
+
+  // Simple named slots
+  while ((m = patterns.simpleNamedSlots.exec(body)) !== null) {
+    if (m.index === patterns.simpleNamedSlots.lastIndex) {
+      patterns.simpleNamedSlots.lastIndex++;
+    }
+
+    const [find, name] = m;
+    copy = copy.replace(find, slots[name] || '');
+  }
+  body = copy;
+
+  // Complex Default slots
+  while ((m = patterns.complexDefaultSlots.exec(body)) !== null) {
+    if (m.index === patterns.complexDefaultSlots.lastIndex) {
+      patterns.complexDefaultSlots.lastIndex++;
     }
 
     const [find, fallback] = m;
-    body = body.replace(find, content || fallback || '');
+    copy = copy.replace(find, slots.default || fallback || '');
   }
+  body = copy;
 
-  body = body.replace(/<sergey-slot\s?\/>/gm, content);
+  // Simple default slots
+  body = body.replace(patterns.simpleDefaultSlots, slots.default);
+
   return body;
 };
 
-const compileBody = body => {
-  const basicImport = /<sergey-import src="([a-z0-9\.]*)"\s?\/>/gm;
-  while ((m = basicImport.exec(body)) !== null) {
-    if (m.index === basicImport.lastIndex) {
-      basicImport.lastIndex++;
+const compileTemplate = (body, slots) => {
+  body = compileSlots(body, slots);
+
+  if (!hasImports(body)) {
+    return body;
+  }
+
+  // Simple imports
+  while ((m = patterns.simpleImports.exec(body)) !== null) {
+    if (m.index === patterns.simpleImports.lastIndex) {
+      patterns.simpleImports.lastIndex++;
     }
 
     let [find, key] = m;
-    key = key.endsWith('.html') ? key : `${key}.html`;
-    let replace = cachedImports[key] || '';
+    let replace = cachedImports[getKey(key)] || '';
+    const slots = getSlots('');
 
-    // Remove empty slots
-    replace = compileSlots(replace, '');
+    // Recurse
+    replace = compileTemplate(replace, slots);
 
     body = body.replace(find, replace);
   }
 
-  const complexImport = /<sergey-import src="([a-z0-9\.]*)">(.*?)<\/sergey-import>/gms;
-  while ((m = complexImport.exec(body)) !== null) {
-    if (m.index === complexImport.lastIndex) {
-      complexImport.lastIndex++;
+  // Complex imports
+  while ((m = patterns.complexImports.exec(body)) !== null) {
+    if (m.index === patterns.complexImports.lastIndex) {
+      patterns.complexImports.lastIndex++;
     }
 
     let [find, key, content] = m;
-    key = key.endsWith('.html') ? key : `${key}.html`;
-    let replace = cachedImports[key] || '';
-    replace = compileSlots(replace, content);
+    let replace = cachedImports[getKey(key)] || '';
+    const slots = getSlots(content);
+
+    // Recurse
+    replace = compileTemplate(replace, slots);
 
     body = body.replace(find, replace);
   }
 
   return body;
+};
+
+const compileFile = body => {
+  return compileTemplate(body, {
+    default: ''
+  });
 };
 
 const compileFolder = async (localFolder, localPublicFolder) => {
@@ -254,7 +333,7 @@ const compileFolder = async (localFolder, localPublicFolder) => {
 
             if (localFilePath.endsWith('.html')) {
               return readFile(fullFilePath)
-                .then(compileBody)
+                .then(compileFile)
                 .then(body => writeFile(fullPublicFilePath, body));
             }
 
@@ -296,7 +375,6 @@ const compileFiles = async () => {
 
     await clearOutputFolder();
     await prepareImports(IMPORTS);
-    await compileImports();
     await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();

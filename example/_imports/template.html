@@ -3,15 +3,17 @@
 
 <head>
   <sergey-import src="head">
-    <title>Title</title>
+    <sergey-template name="title">
+      <sergey-slot name="title" />
+    </sergey-template>
   </sergey-import>
 </head>
 
 <body>
   <sergey-import src="header" />
 
-  <main>
-    <sergey-slot />
+  <main class="wrapper">
+    <sergey-slot name="content" />
   </main>
 
   <sergey-import src="footer" />

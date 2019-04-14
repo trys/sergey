@@ -25,20 +25,13 @@
   color="#16355f"
 />
 <link rel="shortcut icon" href="/assets/icons/favicon.ico" />
-<meta name="apple-mobile-web-app-title" content="<sergey-slot />" />
-<meta name="application-name" content="<sergey-slot />" />
 <meta name="msapplication-TileColor" content="#ffffff" />
 <meta name="msapplication-config" content="/assets/icons/browserconfig.xml" />
 <meta name="theme-color" content="#16355f" />
-<meta name="description" content="the little static site generator" />
 <meta property="og:url" content="https://sergey.cool/" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="<sergey-slot />" />
-<meta property="og:description" content="the little static site generator" />
 <meta property="og:image" content="https://sergey.cool/assets/img/og.jpg" />
-<meta property="og:image:alt" content="<sergey-slot />" />
 <meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="<sergey-slot />" />
-<meta name="twitter:description" content="the little static site generator" />
 <meta name="twitter:image" content="https://sergey.cool/assets/img/og.jpg" />
-<title><sergey-slot /></title>
+<sergey-import src="head-description"><sergey-slot name="description">The little static site generator</sergey-slot></sergey-import>
+<sergey-import src="head-title"><sergey-slot name="title">Default title</sergey-slot></sergey-import>
