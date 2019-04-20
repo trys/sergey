@@ -1,7 +1,7 @@
 {
   "name": "sergey",
-  "version": "0.0.3",
-  "description": "The little SSG",
+  "version": "0.0.4",
+  "description": "The little static site generator",
   "main": "index.js",
   "bin": {
     "sergey": "./index.js"
