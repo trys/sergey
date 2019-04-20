@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const { performance } = require('perf_hooks');
+const marked = require('marked');
 
 /**
  * Environment varibales
@@ -14,11 +15,15 @@ const ROOT = getEnv('--root=') || './';
 const IMPORTS_LOCAL = getEnv('--imports=') || '_imports';
 const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
 
+const CONTENT_LOCAL = getEnv('--content=') || '_content';
+const CONTENT = `${ROOT}${CONTENT_LOCAL}/`;
+
 const OUTPUT_LOCAL = getEnv('--output=') || 'public';
 const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
 
 const VERBOSE = false;
 const cachedImports = {};
+const cachedMarkdown = {};
 const excludedFolders = [
   '.git',
   '.DS_Store',
@@ -36,8 +41,8 @@ const patterns = {
   simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)"\s?\/>/gm,
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
-  complexImports: /<sergey-import src="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-zA-Z0-9-.]*)"\s?\/>/gm
+  complexImports: /<sergey-import src="([a-zA-Z0-9-.]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-zA-Z0-9-.]*)"(?:\sas="(.*?)")?\s?\/>/gm
 };
 
 /**
@@ -144,9 +149,10 @@ const getFilesToWatch = path => {
   const files = [];
   const filesToIgnore = [...excludedFolders];
   const importIndex = filesToIgnore.indexOf(IMPORTS_LOCAL);
-  if (importIndex !== -1) {
-    filesToIgnore.splice(importIndex, 1);
-  }
+  if (importIndex !== -1) filesToIgnore.splice(importIndex, 1);
+
+  const contentIndex = filesToIgnore.indexOf(CONTENT_LOCAL);
+  if (contentIndex !== -1) filesToIgnore.splice(contentIndex, 1);
 
   if (fs.existsSync(path)) {
     fs.readdirSync(path).forEach(function(file, index) {
@@ -170,7 +176,8 @@ const getFilesToWatch = path => {
  * Helpers
  */
 const formatContent = x => x.replace(patterns.whitespace, '');
-const getKey = key => (key.endsWith('.html') ? key : `${key}.html`);
+const getKey = (key, ext = '.html') =>
+  key.endsWith(ext) ? key : `${key}${ext}`;
 const hasImports = x => x.includes('<sergey-import');
 
 /**
@@ -189,6 +196,21 @@ const prepareImports = async importsDir => {
 
 const primeImport = (name, body) => {
   cachedImports[name] = body;
+};
+
+const prepareMarkdown = async contentDir => {
+  const fileNames = await readDir(contentDir);
+  const bodies = await Promise.all(
+    fileNames.map(localFileName => {
+      return readFile(`${contentDir}${localFileName}`);
+    })
+  );
+
+  fileNames.forEach((name, i) => primeMarkdown(name, bodies[i]));
+};
+
+const primeMarkdown = (name, body) => {
+  cachedMarkdown[name] = body;
 };
 
 const getSlots = content => {
@@ -270,8 +292,15 @@ const compileImport = (body, pattern) => {
       pattern.lastIndex++;
     }
 
-    let [find, key, content = ''] = m;
-    let replace = cachedImports[getKey(key)] || '';
+    let [find, key, htmlAs = '', content = ''] = m;
+    let replace = '';
+
+    if (htmlAs === 'markdown') {
+      replace = marked(cachedMarkdown[getKey(key, '.md')] || '');
+    } else {
+      replace = cachedImports[getKey(key)] || '';
+    }
+
     const slots = getSlots(content);
     // console.log(slots);
 
@@ -363,6 +392,7 @@ const compileFiles = async () => {
 
     await clearOutputFolder();
     await prepareImports(IMPORTS);
+    await prepareMarkdown(CONTENT);
     await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();
