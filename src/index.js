@@ -31,13 +31,13 @@ const excludedFolders = [
 
 const patterns = {
   whitespace: /^\s+|\s+$/g,
-  templates: /<sergey-template name="([a-z0-9-.]*)">(.*?)<\/sergey-template>/gms,
-  complexNamedSlots: /<sergey-slot name="([a-z0-9-.]*)">(.*?)<\/sergey-slot>/gms,
-  simpleNamedSlots: /<sergey-slot name="([a-z0-9-.]*)"\s?\/>/gm,
+  templates: /<sergey-template name="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)"\s?\/>/gm,
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
-  complexImports: /<sergey-import src="([a-z0-9-.]*)">(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-z0-9-.]*)"\s?\/>/gm
+  complexImports: /<sergey-import src="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-zA-Z0-9-.]*)"\s?\/>/gm
 };
 
 /**
@@ -184,15 +184,17 @@ const prepareImports = async importsDir => {
     })
   );
 
-  fileNames.forEach((fileName, index) => {
-    cachedImports[fileName] = bodies[index];
-  });
+  fileNames.forEach((name, i) => primeImport(name, bodies[i]));
+};
+
+const primeImport = (name, body) => {
+  cachedImports[name] = body;
 };
 
 const getSlots = content => {
   // Extract templates first
   const slots = {
-    default: formatContent(content)
+    default: formatContent(content) || ''
   };
 
   // Search content for templates
@@ -260,52 +262,38 @@ const compileSlots = (body, slots) => {
   return body;
 };
 
-const compileTemplate = (body, slots) => {
-  body = compileSlots(body, slots);
-
-  if (!hasImports(body)) {
-    return body;
-  }
-
+const compileImport = (body, pattern) => {
+  let m;
   // Simple imports
-  while ((m = patterns.simpleImports.exec(body)) !== null) {
-    if (m.index === patterns.simpleImports.lastIndex) {
-      patterns.simpleImports.lastIndex++;
+  while ((m = pattern.exec(body)) !== null) {
+    if (m.index === pattern.lastIndex) {
+      pattern.lastIndex++;
     }
 
-    let [find, key] = m;
-    let replace = cachedImports[getKey(key)] || '';
-    const slots = getSlots('');
-
-    // Recurse
-    replace = compileTemplate(replace, slots);
-
-    body = body.replace(find, replace);
-  }
-
-  // Complex imports
-  while ((m = patterns.complexImports.exec(body)) !== null) {
-    if (m.index === patterns.complexImports.lastIndex) {
-      patterns.complexImports.lastIndex++;
-    }
-
-    let [find, key, content] = m;
+    let [find, key, content = ''] = m;
     let replace = cachedImports[getKey(key)] || '';
     const slots = getSlots(content);
+    // console.log(slots);
 
     // Recurse
     replace = compileTemplate(replace, slots);
-
     body = body.replace(find, replace);
   }
 
   return body;
 };
 
-const compileFile = body => {
-  return compileTemplate(body, {
-    default: ''
-  });
+const compileTemplate = (body, slots = { default: '' }) => {
+  body = compileSlots(body, slots);
+
+  if (!hasImports(body)) {
+    return body;
+  }
+
+  body = compileImport(body, patterns.simpleImports);
+  body = compileImport(body, patterns.complexImports);
+
+  return body;
 };
 
 const compileFolder = async (localFolder, localPublicFolder) => {
@@ -333,7 +321,7 @@ const compileFolder = async (localFolder, localPublicFolder) => {
 
             if (localFilePath.endsWith('.html')) {
               return readFile(fullFilePath)
-                .then(compileFile)
+                .then(compileTemplate)
                 .then(body => writeFile(fullPublicFilePath, body));
             }
 
@@ -426,5 +414,6 @@ const sergeyRuntime = async () => {
 
 module.exports = {
   sergeyRuntime,
-  compileTemplate
+  compileTemplate,
+  primeImport
 };
