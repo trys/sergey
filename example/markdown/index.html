@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <sergey-import src="head">
+    <sergey-template name="title">Markdown | Sergey | the little static site generator</sergey-template>
+  </sergey-import>
+</head>
+
+<body>
+  <sergey-import src="header">
+    <p>Knowledge of markdown is often a requirement for static site generators, but Sergey treats markdown as an opt-in feature. So if you'd like to format some or all of your content in markdown, here's how to do it:</p>
+  </sergey-import>
+
+  <main class="insulate">
+    <div class="wrapper content">
+      <sergey-import src="markdown" as="markdown" />
+    </div>
+  </main>
+
+  <sergey-import src="footer" />
+</body>
+</html>
