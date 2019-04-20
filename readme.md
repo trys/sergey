@@ -1,6 +1,6 @@
 # Sergey
 
-## The little SSG
+## The little static site generator
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify/sergey-netlify)
 
