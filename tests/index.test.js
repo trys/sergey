@@ -1,4 +1,4 @@
-const { compileTemplate, primeImport } = require('../src');
+const { compileTemplate, primeImport, primeMarkdown } = require('../src');
 
 const wrapper = (x = '') => `<html>
   <body>
@@ -244,6 +244,36 @@ describe('Import compilation', () => {
 
     const desiredOutput = header(defaultContent);
     const output = compileTemplate(`<sergey-import src="header" />`);
+
+    expect(output).toBe(desiredOutput);
+  });
+});
+
+describe('Markdown compilation', () => {
+  test('A heading', () => {
+    primeMarkdown('about.md', '# About us');
+
+    const desiredOutput = '<h1 id="about-us">About us</h1>';
+    const output = compileTemplate(
+      '<sergey-import src="about" as="markdown" />'
+    );
+
+    expect(output).toBe(desiredOutput);
+  });
+
+  test('Multiline markdown', () => {
+    primeMarkdown(
+      'about.md',
+      `# About us
+Content is **great**.`
+    );
+
+    const desiredOutput = `<h1 id="about-us">About us</h1>
+<p>Content is <strong>great</strong>.</p>`;
+
+    const output = compileTemplate(
+      '<sergey-import src="about" as="markdown" />'
+    );
 
     expect(output).toBe(desiredOutput);
   });

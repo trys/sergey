@@ -296,7 +296,7 @@ const compileImport = (body, pattern) => {
     let replace = '';
 
     if (htmlAs === 'markdown') {
-      replace = marked(cachedMarkdown[getKey(key, '.md')] || '');
+      replace = formatContent(marked(cachedMarkdown[getKey(key, '.md')] || ''));
     } else {
       replace = cachedImports[getKey(key)] || '';
     }
@@ -392,7 +392,10 @@ const compileFiles = async () => {
 
     await clearOutputFolder();
     await prepareImports(IMPORTS);
-    await prepareMarkdown(CONTENT);
+    try {
+      await readDir(IMPORTS);
+      await prepareMarkdown(CONTENT);
+    } catch (e) {}
     await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();
@@ -445,5 +448,6 @@ const sergeyRuntime = async () => {
 module.exports = {
   sergeyRuntime,
   compileTemplate,
-  primeImport
+  primeImport,
+  primeMarkdown
 };
