@@ -1,4 +1,4 @@
-## Command options
+## Options
 
 These options can be passed into the default `sergey` command or as entries in your `.env` file.
 
