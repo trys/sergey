@@ -1,4 +1,4 @@
-const { compileTemplate, primeImport } = require('../src');
+const { compileTemplate, primeImport, IMPORTS } = require('../src');
 
 const wrapper = (x = '') => `<html>
   <body>
@@ -14,6 +14,8 @@ const header = (x = '') => `<header>
 const footer = () => `<footer>
   &copy; 2019
 </footer>`;
+
+const testImport = file => `${IMPORTS}${file}`;
 
 describe('Slot compilation', () => {
   test('Zero compilation', () => {
@@ -154,7 +156,7 @@ describe('Slot compilation', () => {
 
 describe('Import compilation', () => {
   test('A basic import', () => {
-    primeImport('header.html', header());
+    primeImport(testImport('header.html'), header());
 
     const desiredOutput = header();
     const output = compileTemplate('<sergey-import src="header" />');
@@ -163,8 +165,8 @@ describe('Import compilation', () => {
   });
 
   test('Multiple imports', () => {
-    primeImport('header.html', header());
-    primeImport('footer.html', footer());
+    primeImport(testImport('header.html'), header());
+    primeImport(testImport('footer.html'), footer());
 
     const content = '<p>Content</p>';
 
@@ -180,7 +182,7 @@ describe('Import compilation', () => {
   });
 
   test('A basic import with a slot', () => {
-    primeImport('header.html', header('<sergey-slot />'));
+    primeImport(testImport('header.html'), header('<sergey-slot />'));
     const content = '<p>Content</p>';
 
     const desiredOutput = header(content);
@@ -193,7 +195,10 @@ describe('Import compilation', () => {
 
   test('A basic import with a default slot', () => {
     const content = '<p>Content</p>';
-    primeImport('header.html', header(`<sergey-slot>${content}</sergey-slot>`));
+    primeImport(
+      testImport('header.html'),
+      header(`<sergey-slot>${content}</sergey-slot>`)
+    );
 
     const desiredOutput = header(content);
     const output = compileTemplate(`<sergey-import src="header" />`);
@@ -202,7 +207,10 @@ describe('Import compilation', () => {
   });
 
   test('A basic import with a named slot', () => {
-    primeImport('header.html', header(`<sergey-slot name="headerName" />`));
+    primeImport(
+      testImport('header.html'),
+      header(`<sergey-slot name="headerName" />`)
+    );
     const content = '<h1>Header</h1>';
 
     const desiredOutput = header(content);
@@ -217,7 +225,7 @@ describe('Import compilation', () => {
 
   test('Named and unnamed slots', () => {
     primeImport(
-      'header.html',
+      testImport('header.html'),
       header(`<sergey-slot name="headerName" />
     <sergey-slot />`)
     );
@@ -238,12 +246,42 @@ describe('Import compilation', () => {
   test('Default named slots', () => {
     const defaultContent = '<h1>Header</h1>';
     primeImport(
-      'header.html',
+      testImport('header.html'),
       header(`<sergey-slot name="headerName">${defaultContent}</sergey-slot>`)
     );
 
     const desiredOutput = header(defaultContent);
     const output = compileTemplate(`<sergey-import src="header" />`);
+
+    expect(output).toBe(desiredOutput);
+  });
+});
+
+describe('Markdown compilation', () => {
+  test('A heading', () => {
+    primeImport(testImport('about.md'), '# About us');
+
+    const desiredOutput = '<h1 id="about-us">About us</h1>';
+    const output = compileTemplate(
+      '<sergey-import src="about" as="markdown" />'
+    );
+
+    expect(output).toBe(desiredOutput);
+  });
+
+  test('Multiline markdown', () => {
+    primeImport(
+      testImport('about.md'),
+      `# About us
+Content is **great**.`
+    );
+
+    const desiredOutput = `<h1 id="about-us">About us</h1>
+<p>Content is <strong>great</strong>.</p>`;
+
+    const output = compileTemplate(
+      '<sergey-import src="about" as="markdown" />'
+    );
 
     expect(output).toBe(desiredOutput);
   });

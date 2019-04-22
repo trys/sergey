@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const { performance } = require('perf_hooks');
+const marked = require('marked');
 
 /**
  * Environment varibales
@@ -14,11 +15,15 @@ const ROOT = getEnv('--root=') || './';
 const IMPORTS_LOCAL = getEnv('--imports=') || '_imports';
 const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
 
+const CONTENT_LOCAL = getEnv('--content=') || '_imports';
+const CONTENT = `${ROOT}${CONTENT_LOCAL}/`;
+
 const OUTPUT_LOCAL = getEnv('--output=') || 'public';
 const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
 
 const VERBOSE = false;
 const cachedImports = {};
+
 const excludedFolders = [
   '.git',
   '.DS_Store',
@@ -31,13 +36,13 @@ const excludedFolders = [
 
 const patterns = {
   whitespace: /^\s+|\s+$/g,
-  templates: /<sergey-template name="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-template>/gms,
-  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-slot>/gms,
-  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)"\s?\/>/gm,
+  templates: /<sergey-template name="([a-zA-Z0-9-.\\\/]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.\\\/]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.\\\/]*)"\s?\/>/gm,
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
-  complexImports: /<sergey-import src="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-zA-Z0-9-.]*)"\s?\/>/gm
+  complexImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm
 };
 
 /**
@@ -115,20 +120,34 @@ const clearOutputFolder = async () => {
   return deleteFolder(OUTPUT);
 };
 
-const getAllHTMLFiles = path => {
+const getAllFiles = (path, filter, exclude = false) => {
+  path = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
+
   const files = [];
+  const filesToIgnore = [...excludedFolders];
+  if (!filter) {
+    filter = () => true;
+  }
+
+  if (exclude) {
+    const importIndex = filesToIgnore.indexOf(IMPORTS_LOCAL);
+    if (importIndex !== -1) filesToIgnore.splice(importIndex, 1);
+
+    const contentIndex = filesToIgnore.indexOf(CONTENT_LOCAL);
+    if (contentIndex !== -1) filesToIgnore.splice(contentIndex, 1);
+  }
 
   if (fs.existsSync(path)) {
-    fs.readdirSync(path).forEach(function(file, index) {
-      if (excludedFolders.find(x => file.startsWith(x))) {
+    fs.readdirSync(path).forEach((file, index) => {
+      if (filesToIgnore.find(x => file.startsWith(x))) {
         return;
       }
 
       const newPath = path + '/' + file;
       if (fs.lstatSync(newPath).isDirectory()) {
-        files.push(...getAllHTMLFiles(newPath));
+        files.push(...getAllFiles(newPath, filter, exclude));
       } else {
-        if (!file.endsWith('.html')) {
+        if (!filter(file)) {
           return;
         }
 
@@ -141,54 +160,30 @@ const getAllHTMLFiles = path => {
 };
 
 const getFilesToWatch = path => {
-  const files = [];
-  const filesToIgnore = [...excludedFolders];
-  const importIndex = filesToIgnore.indexOf(IMPORTS_LOCAL);
-  if (importIndex !== -1) {
-    filesToIgnore.splice(importIndex, 1);
-  }
-
-  if (fs.existsSync(path)) {
-    fs.readdirSync(path).forEach(function(file, index) {
-      if (filesToIgnore.find(x => file.startsWith(x))) {
-        return;
-      }
-
-      const newPath = path + '/' + file;
-      if (fs.lstatSync(newPath).isDirectory()) {
-        files.push(...getFilesToWatch(newPath));
-      } else {
-        files.push(newPath);
-      }
-    });
-  }
-
-  return files;
+  return getAllFiles(path, '', true);
 };
 
 /**
  * Helpers
  */
 const formatContent = x => x.replace(patterns.whitespace, '');
-const getKey = key => (key.endsWith('.html') ? key : `${key}.html`);
+const getKey = (key, ext = '.html', folder = '') => {
+  const file = key.endsWith(ext) ? key : `${key}${ext}`;
+  return `${folder}${file}`;
+};
 const hasImports = x => x.includes('<sergey-import');
 
 /**
  * #business logic
  */
-const prepareImports = async importsDir => {
-  const fileNames = await readDir(importsDir);
-  const bodies = await Promise.all(
-    fileNames.map(localFileName => {
-      return readFile(`${importsDir}${localFileName}`);
-    })
-  );
-
-  fileNames.forEach((name, i) => primeImport(name, bodies[i]));
+const prepareImports = async folder => {
+  const fileNames = await getAllFiles(folder);
+  const bodies = await Promise.all(fileNames.map(readFile));
+  fileNames.forEach((path, i) => primeImport(path, bodies[i]));
 };
 
-const primeImport = (name, body) => {
-  cachedImports[name] = body;
+const primeImport = (path, body) => {
+  cachedImports[path] = body;
 };
 
 const getSlots = content => {
@@ -270,10 +265,18 @@ const compileImport = (body, pattern) => {
       pattern.lastIndex++;
     }
 
-    let [find, key, content = ''] = m;
-    let replace = cachedImports[getKey(key)] || '';
+    let [find, key, htmlAs = '', content = ''] = m;
+    let replace = '';
+
+    if (htmlAs === 'markdown') {
+      replace = formatContent(
+        marked(cachedImports[getKey(key, '.md', CONTENT)] || '')
+      );
+    } else {
+      replace = cachedImports[getKey(key, '.html', IMPORTS)] || '';
+    }
+
     const slots = getSlots(content);
-    // console.log(slots);
 
     // Recurse
     replace = compileTemplate(replace, slots);
@@ -363,6 +366,14 @@ const compileFiles = async () => {
 
     await clearOutputFolder();
     await prepareImports(IMPORTS);
+
+    if (IMPORTS !== CONTENT) {
+      try {
+        await readDir(CONTENT);
+        await prepareImports(CONTENT);
+      } catch (e) {}
+    }
+
     await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();
@@ -415,5 +426,7 @@ const sergeyRuntime = async () => {
 module.exports = {
   sergeyRuntime,
   compileTemplate,
-  primeImport
+  primeImport,
+  CONTENT,
+  IMPORTS
 };

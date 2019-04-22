@@ -1,6 +1,6 @@
 {
   "name": "sergey",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "The little static site generator",
   "main": "index.js",
   "bin": {
@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node index.js --root=./example/",
     "dev": "node index.js --watch --root=./example/",
-    "test": "jest"
+    "test": "jest --root=./example/"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
   "dependencies": {
     "chokidar": "^2.1.5",
     "connect": "^3.6.6",
+    "marked": "^0.6.2",
     "serve-static": "^1.13.2"
   },
   "devDependencies": {
