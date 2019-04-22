@@ -15,7 +15,7 @@ const ROOT = getEnv('--root=') || './';
 const IMPORTS_LOCAL = getEnv('--imports=') || '_imports';
 const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
 
-const CONTENT_LOCAL = getEnv('--content=') || '_content';
+const CONTENT_LOCAL = getEnv('--content=') || '_imports';
 const CONTENT = `${ROOT}${CONTENT_LOCAL}/`;
 
 const OUTPUT_LOCAL = getEnv('--output=') || 'public';
@@ -23,7 +23,7 @@ const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
 
 const VERBOSE = false;
 const cachedImports = {};
-const cachedMarkdown = {};
+
 const excludedFolders = [
   '.git',
   '.DS_Store',
@@ -176,41 +176,29 @@ const getFilesToWatch = path => {
  * Helpers
  */
 const formatContent = x => x.replace(patterns.whitespace, '');
-const getKey = (key, ext = '.html') =>
-  key.endsWith(ext) ? key : `${key}${ext}`;
+const getKey = (key, ext = '.html', folder = '') => {
+  const file = key.endsWith(ext) ? key : `${key}${ext}`;
+  return `${folder}${file}`;
+};
 const hasImports = x => x.includes('<sergey-import');
 
 /**
  * #business logic
  */
-const prepareImports = async importsDir => {
-  const fileNames = await readDir(importsDir);
+const prepareImports = async folder => {
+  const fileNames = await readDir(folder);
   const bodies = await Promise.all(
     fileNames.map(localFileName => {
-      return readFile(`${importsDir}${localFileName}`);
+      return readFile(`${folder}${localFileName}`);
     })
   );
 
-  fileNames.forEach((name, i) => primeImport(name, bodies[i]));
+  fileNames.forEach((name, i) => primeImport(name, bodies[i], folder));
 };
 
-const primeImport = (name, body) => {
-  cachedImports[name] = body;
-};
-
-const prepareMarkdown = async contentDir => {
-  const fileNames = await readDir(contentDir);
-  const bodies = await Promise.all(
-    fileNames.map(localFileName => {
-      return readFile(`${contentDir}${localFileName}`);
-    })
-  );
-
-  fileNames.forEach((name, i) => primeMarkdown(name, bodies[i]));
-};
-
-const primeMarkdown = (name, body) => {
-  cachedMarkdown[name] = body;
+const primeImport = (name, body, folder) => {
+  folder = folder || IMPORTS;
+  cachedImports[`${folder}${name}`] = body;
 };
 
 const getSlots = content => {
@@ -296,13 +284,14 @@ const compileImport = (body, pattern) => {
     let replace = '';
 
     if (htmlAs === 'markdown') {
-      replace = formatContent(marked(cachedMarkdown[getKey(key, '.md')] || ''));
+      replace = formatContent(
+        marked(cachedImports[getKey(key, '.md', CONTENT)] || '')
+      );
     } else {
-      replace = cachedImports[getKey(key)] || '';
+      replace = cachedImports[getKey(key, '.html', IMPORTS)] || '';
     }
 
     const slots = getSlots(content);
-    // console.log(slots);
 
     // Recurse
     replace = compileTemplate(replace, slots);
@@ -392,10 +381,14 @@ const compileFiles = async () => {
 
     await clearOutputFolder();
     await prepareImports(IMPORTS);
-    try {
-      await readDir(IMPORTS);
-      await prepareMarkdown(CONTENT);
-    } catch (e) {}
+
+    if (IMPORTS !== CONTENT) {
+      try {
+        await readDir(CONTENT);
+        await prepareImports(CONTENT);
+      } catch (e) {}
+    }
+
     await compileFolder('', `${OUTPUT_LOCAL}/`);
 
     const end = performance.now();
@@ -448,6 +441,5 @@ const sergeyRuntime = async () => {
 module.exports = {
   sergeyRuntime,
   compileTemplate,
-  primeImport,
-  primeMarkdown
+  primeImport
 };

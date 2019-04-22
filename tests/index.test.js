@@ -1,4 +1,4 @@
-const { compileTemplate, primeImport, primeMarkdown } = require('../src');
+const { compileTemplate, primeImport } = require('../src');
 
 const wrapper = (x = '') => `<html>
   <body>
@@ -251,7 +251,7 @@ describe('Import compilation', () => {
 
 describe('Markdown compilation', () => {
   test('A heading', () => {
-    primeMarkdown('about.md', '# About us');
+    primeImport('about.md', '# About us');
 
     const desiredOutput = '<h1 id="about-us">About us</h1>';
     const output = compileTemplate(
@@ -262,7 +262,7 @@ describe('Markdown compilation', () => {
   });
 
   test('Multiline markdown', () => {
-    primeMarkdown(
+    primeImport(
       'about.md',
       `# About us
 Content is **great**.`

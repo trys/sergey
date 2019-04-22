@@ -22,4 +22,4 @@ Sergey uses an `_imports` folder by default, but this argument lets you change t
 
 #### `--content=markdown`
 
-Markdown files should be stored in a `_content` folder, you can override that.
+Markdown files should be stored in a `_imports` folder, but you can override that.
