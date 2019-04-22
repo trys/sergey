@@ -2,24 +2,34 @@
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 const marked = require('marked');
+const dotenv = require('dotenv').config();
 
 /**
  * Environment varibales
  */
-const getEnv = key =>
-  (process.argv.find(x => x.startsWith(key)) || '').replace(key, '');
+const getEnv = (argKey, envKey) => {
+  return (
+    process.env[envKey] ||
+    (process.argv.find(x => x.startsWith(argKey)) || '').replace(argKey, '')
+  );
+};
 const isWatching = process.argv.includes('--watch');
 
-const ROOT = getEnv('--root=') || './';
+const ROOT = getEnv('--root=', 'SERGEY_ROOT') || './';
 
-const IMPORTS_LOCAL = getEnv('--imports=') || '_imports';
+const IMPORTS_LOCAL = getEnv('--imports=', 'SERGEY_IMPORTS') || '_imports';
 const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
 
-const CONTENT_LOCAL = getEnv('--content=') || '_imports';
+const CONTENT_LOCAL = getEnv('--content=', 'SERGEY_CONTENT') || '_imports';
 const CONTENT = `${ROOT}${CONTENT_LOCAL}/`;
 
-const OUTPUT_LOCAL = getEnv('--output=') || 'public';
+const OUTPUT_LOCAL = getEnv('--output=', 'SERGEY_OUTPUT') || 'public';
 const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
+
+const EXCLUDE = (getEnv('--exclude=', 'SERGEY_EXCLUDE') || '')
+  .split(',')
+  .map(x => x.trim())
+  .filter(Boolean);
 
 const VERBOSE = false;
 const cachedImports = {};
@@ -31,7 +41,8 @@ const excludedFolders = [
   'package.json',
   'package-lock.json',
   IMPORTS_LOCAL,
-  OUTPUT_LOCAL
+  OUTPUT_LOCAL,
+  ...EXCLUDE
 ];
 
 const patterns = {
@@ -172,6 +183,11 @@ const getKey = (key, ext = '.html', folder = '') => {
   return `${folder}${file}`;
 };
 const hasImports = x => x.includes('<sergey-import');
+const primeExcludedFiles = name => {
+  if (!excludedFolders.includes(name)) {
+    excludedFolders.push(name);
+  }
+};
 
 /**
  * #business logic
@@ -384,6 +400,18 @@ const compileFiles = async () => {
   }
 };
 
+const excludeGitIgnoreContents = async () => {
+  try {
+    const ignore = await readFile('./.gitignore');
+    const exclusions = ignore
+      .split('\n')
+      .map(x => (x.endsWith('/') ? x.substring(0, x.length - 1) : x))
+      .map(x => (x.startsWith('/') ? x.substring(1, x.length) : x))
+      .filter(Boolean)
+      .map(primeExcludedFiles);
+  } catch (e) {}
+};
+
 const sergeyRuntime = async () => {
   if (!OUTPUT.startsWith('./')) {
     console.error('DANGER! Make sure you start the root with a ./');
@@ -395,6 +423,7 @@ const sergeyRuntime = async () => {
     return;
   }
 
+  await excludeGitIgnoreContents();
   await compileFiles();
 
   if (isWatching) {
