@@ -1,6 +1,6 @@
 {
   "name": "sergey",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "The little static site generator",
   "main": "index.js",
   "bin": {
@@ -25,6 +25,7 @@
   "dependencies": {
     "chokidar": "^2.1.5",
     "connect": "^3.6.6",
+    "dotenv": "^7.0.0",
     "marked": "^0.6.2",
     "serve-static": "^1.13.2"
   },
