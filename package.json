@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node index.js --root=./example/",
     "dev": "node index.js --watch --root=./example/",
-    "test": "jest"
+    "test": "jest --root=./example/"
   },
   "repository": {
     "type": "git",

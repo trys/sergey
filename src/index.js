@@ -36,13 +36,13 @@ const excludedFolders = [
 
 const patterns = {
   whitespace: /^\s+|\s+$/g,
-  templates: /<sergey-template name="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-template>/gms,
-  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)">(.*?)<\/sergey-slot>/gms,
-  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.]*)"\s?\/>/gm,
+  templates: /<sergey-template name="([a-zA-Z0-9-.\\\/]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.\\\/]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.\\\/]*)"\s?\/>/gm,
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
-  complexImports: /<sergey-import src="([a-zA-Z0-9-.]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-zA-Z0-9-.]*)"(?:\sas="(.*?)")?\s?\/>/gm
+  complexImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm
 };
 
 /**
@@ -120,20 +120,34 @@ const clearOutputFolder = async () => {
   return deleteFolder(OUTPUT);
 };
 
-const getAllHTMLFiles = path => {
+const getAllFiles = (path, filter, exclude = false) => {
+  path = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
+
   const files = [];
+  const filesToIgnore = [...excludedFolders];
+  if (!filter) {
+    filter = () => true;
+  }
+
+  if (exclude) {
+    const importIndex = filesToIgnore.indexOf(IMPORTS_LOCAL);
+    if (importIndex !== -1) filesToIgnore.splice(importIndex, 1);
+
+    const contentIndex = filesToIgnore.indexOf(CONTENT_LOCAL);
+    if (contentIndex !== -1) filesToIgnore.splice(contentIndex, 1);
+  }
 
   if (fs.existsSync(path)) {
-    fs.readdirSync(path).forEach(function(file, index) {
-      if (excludedFolders.find(x => file.startsWith(x))) {
+    fs.readdirSync(path).forEach((file, index) => {
+      if (filesToIgnore.find(x => file.startsWith(x))) {
         return;
       }
 
       const newPath = path + '/' + file;
       if (fs.lstatSync(newPath).isDirectory()) {
-        files.push(...getAllHTMLFiles(newPath));
+        files.push(...getAllFiles(newPath, filter, exclude));
       } else {
-        if (!file.endsWith('.html')) {
+        if (!filter(file)) {
           return;
         }
 
@@ -146,30 +160,7 @@ const getAllHTMLFiles = path => {
 };
 
 const getFilesToWatch = path => {
-  const files = [];
-  const filesToIgnore = [...excludedFolders];
-  const importIndex = filesToIgnore.indexOf(IMPORTS_LOCAL);
-  if (importIndex !== -1) filesToIgnore.splice(importIndex, 1);
-
-  const contentIndex = filesToIgnore.indexOf(CONTENT_LOCAL);
-  if (contentIndex !== -1) filesToIgnore.splice(contentIndex, 1);
-
-  if (fs.existsSync(path)) {
-    fs.readdirSync(path).forEach(function(file, index) {
-      if (filesToIgnore.find(x => file.startsWith(x))) {
-        return;
-      }
-
-      const newPath = path + '/' + file;
-      if (fs.lstatSync(newPath).isDirectory()) {
-        files.push(...getFilesToWatch(newPath));
-      } else {
-        files.push(newPath);
-      }
-    });
-  }
-
-  return files;
+  return getAllFiles(path, '', true);
 };
 
 /**
@@ -186,19 +177,13 @@ const hasImports = x => x.includes('<sergey-import');
  * #business logic
  */
 const prepareImports = async folder => {
-  const fileNames = await readDir(folder);
-  const bodies = await Promise.all(
-    fileNames.map(localFileName => {
-      return readFile(`${folder}${localFileName}`);
-    })
-  );
-
-  fileNames.forEach((name, i) => primeImport(name, bodies[i], folder));
+  const fileNames = await getAllFiles(folder);
+  const bodies = await Promise.all(fileNames.map(readFile));
+  fileNames.forEach((path, i) => primeImport(path, bodies[i]));
 };
 
-const primeImport = (name, body, folder) => {
-  folder = folder || IMPORTS;
-  cachedImports[`${folder}${name}`] = body;
+const primeImport = (path, body) => {
+  cachedImports[path] = body;
 };
 
 const getSlots = content => {
@@ -441,5 +426,7 @@ const sergeyRuntime = async () => {
 module.exports = {
   sergeyRuntime,
   compileTemplate,
-  primeImport
+  primeImport,
+  CONTENT,
+  IMPORTS
 };
