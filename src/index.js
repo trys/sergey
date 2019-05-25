@@ -434,15 +434,17 @@ const sergeyRuntime = async () => {
     const watchRoot = ROOT.endsWith('/')
       ? ROOT.substring(0, ROOT.length - 1)
       : ROOT;
-    const files = await getFilesToWatch(watchRoot);
+    let ignored = (OUTPUT.endsWith('/')
+      ? OUTPUT.substring(0, OUTPUT.length - 1)
+      : OUTPUT
+    ).replace('./', '');
 
-    console.log(
-      `Watching ${files.length} file${files.length !== 1 ? 's' : ''}`
-    );
+    const task = async () => await compileFiles();
 
-    chokidar.watch(files, {}).on('change', async path => {
-      await compileFiles();
-    });
+    const watcher = chokidar.watch(watchRoot, { ignored, ignoreInitial: true });
+    watcher.on('change', task);
+    watcher.on('add', task);
+    watcher.on('unlink', task);
 
     connect()
       .use(serveStatic(OUTPUT))
