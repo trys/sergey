@@ -69,6 +69,11 @@ a {
   color: inherit;
 }
 
+[aria-current] {
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .center {
   text-align: center;
 }

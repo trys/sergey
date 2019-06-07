@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <sergey-import src="head">
+    <sergey-template name="title">Links | Sergey | the little static site generator</sergey-template>
+  </sergey-import>
+</head>
+
+<body>
+  <sergey-import src="header">
+    <p>Links are a practical way to show your users where they are in your navigation. They're completely opt-in, so if you prefer to use classic <abbr title="HyperText Markup Language">HTML</abbr> links, go for it!</p>
+  </sergey-import>
+
+  <main class="insulate">
+    <div class="wrapper content">
+      <sergey-import src="links" as="markdown" />
+    </div>
+  </main>
+
+  <sergey-import src="footer" />
+</body>
+</html>
