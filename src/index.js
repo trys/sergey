@@ -37,6 +37,7 @@ const cachedImports = {};
 const excludedFolders = [
   '.git',
   '.DS_Store',
+  '.prettierrc',
   'node_modules',
   'package.json',
   'package-lock.json',
