@@ -2,7 +2,7 @@
 
 ## The little static site generator
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify/sergey-netlify)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/trys/sergey-netlify)
 
 Sergey is a tiny lil’ static site generator. It’s a progressive tool designed to site atop your already brilliant HTML. In essence, Sergey is HTML + partials with slots thrown in for good measure.
 
