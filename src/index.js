@@ -26,6 +26,8 @@ const CONTENT = `${ROOT}${CONTENT_LOCAL}/`;
 const OUTPUT_LOCAL = getEnv('--output=', 'SERGEY_OUTPUT') || 'public';
 const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
 
+const ACTIVE_CLASS = getEnv('--active-class=', 'SERGEY_ACTIVE_CLASS') || 'active';
+
 const EXCLUDE = (getEnv('--exclude=', 'SERGEY_EXCLUDE') || '')
   .split(',')
   .map(x => x.trim())
@@ -54,7 +56,8 @@ const patterns = {
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
   complexImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm
+  simpleImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
+  links: /<sergey-link to="([a-zA-Z0-9-.#?\\\/]*)">(.*?)<\/sergey-link>/gms
 };
 
 /**
@@ -184,11 +187,15 @@ const getKey = (key, ext = '.html', folder = '') => {
   return `${folder}${file}`;
 };
 const hasImports = x => x.includes('<sergey-import');
+const hasLinks = x => x.includes('<sergey-link');
 const primeExcludedFiles = name => {
   if (!excludedFolders.includes(name)) {
     excludedFolders.push(name);
   }
 };
+const cleanPath = (path) => path.replace('index.html', '').split('#')[0];
+const isCurrentPage = (ref, path) => path && cleanPath(path) === cleanPath(ref);
+const isParentPage = (ref, path) => path && cleanPath(path).startsWith(cleanPath(ref));
 
 /**
  * #business logic
@@ -316,6 +323,38 @@ const compileTemplate = (body, slots = { default: '' }) => {
   return body;
 };
 
+const compileLinks = (body, path) => {
+  let m;
+  let copy;
+
+  if (!hasLinks(body)) {
+    return body;
+  }
+
+  copy = body;
+  while ((m = patterns.links.exec(body)) !== null) {
+    if (m.index === patterns.links.lastIndex) {
+      patterns.links.lastIndex++;
+    }
+
+    let [find, to, content] = m;
+    let replace = '';
+
+    if (isCurrentPage(to, path)) {
+      replace = `<a href="${to}" class="${ACTIVE_CLASS}" aria-current="page">${content}</a>`;
+    } else if (isParentPage(to, path)) {
+      replace = `<a href="${to}" class="${ACTIVE_CLASS}">${content}</a>`;
+    } else {
+      replace = `<a href="${to}">${content}</a>`;
+    }
+
+    copy = copy.replace(find, replace);
+  }
+  body = copy;
+
+  return body;
+};
+
 const compileFolder = async (localFolder, localPublicFolder) => {
   const fullFolderPath = `${ROOT}${localFolder}`;
   const fullPublicPath = `${ROOT}${localPublicFolder}`;
@@ -338,10 +377,12 @@ const compileFolder = async (localFolder, localPublicFolder) => {
           .map(async localFilePath => {
             const fullFilePath = `${fullFolderPath}${localFilePath}`;
             const fullPublicFilePath = `${fullPublicPath}${localFilePath}`;
+            const fullLocalFilePath = `/${localFolder}${localFilePath}`;
 
             if (localFilePath.endsWith('.html')) {
               return readFile(fullFilePath)
                 .then(compileTemplate)
+                .then(body => compileLinks(body, fullLocalFilePath))
                 .then(body => writeFile(fullPublicFilePath, body));
             }
 
@@ -458,7 +499,9 @@ const sergeyRuntime = async () => {
 module.exports = {
   sergeyRuntime,
   compileTemplate,
+  compileLinks,
   primeImport,
   CONTENT,
-  IMPORTS
+  IMPORTS,
+  ACTIVE_CLASS
 };

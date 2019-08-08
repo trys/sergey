@@ -69,6 +69,11 @@ a {
   color: inherit;
 }
 
+[aria-current] {
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .center {
   text-align: center;
 }
@@ -147,6 +152,7 @@ pre {
 
 pre code {
   background: transparent;
+  white-space: inherit;
 }
 
 .content hr {
