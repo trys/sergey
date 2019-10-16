@@ -15,20 +15,20 @@ If this template is saved as `_imports/navigation.html`, you can reuse the navig
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Our lil' website</title>
-</head>
-<body>
-  <header>
-    <sergey-import src="navigation" />
-  </header>
-  <main>
-    <h1>Welcome!</h1>
-    <p>Our page content.</p>
-  </main>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our lil' website</title>
+  </head>
+  <body>
+    <header>
+      <sergey-import src="navigation" />
+    </header>
+    <main>
+      <h1>Welcome!</h1>
+      <p>Our page content.</p>
+    </main>
+  </body>
 </html>
 ```
 
@@ -67,3 +67,17 @@ In the sample above, we can change our navigation template (`_imports/navigation
 ```
 
 Now when Sergey builds our site, it will add `class="active"` and `aria-current="page"` as appropriate on each page!
+
+#### Pass attributes through `<sergey-link>`
+
+Any HTML attributes we pass to a `<sergey-link>` will be passed through to the generated `<a>` tag. Sergey will also combine any classes you've set with the active class:
+
+```html
+<sergey-link to="/" class="my-class" id="an-id">Home</sergey-link>
+```
+
+The above will be converted into:
+
+```html
+<a href="/" class="active my-class" id="an-id" aria-current="page">Home</a>
+```

@@ -27,7 +27,8 @@ const CONTENT = `${ROOT}${CONTENT_LOCAL}/`;
 const OUTPUT_LOCAL = getEnv('--output=', 'SERGEY_OUTPUT') || 'public';
 const OUTPUT = `${ROOT}${OUTPUT_LOCAL}/`;
 
-const ACTIVE_CLASS = getEnv('--active-class=', 'SERGEY_ACTIVE_CLASS') || 'active';
+const ACTIVE_CLASS =
+  getEnv('--active-class=', 'SERGEY_ACTIVE_CLASS') || 'active';
 
 const EXCLUDE = (getEnv('--exclude=', 'SERGEY_EXCLUDE') || '')
   .split(',')
@@ -58,7 +59,7 @@ const patterns = {
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
   complexImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
   simpleImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
-  links: /<sergey-link to="([a-zA-Z0-9-.#?\\\/]*)">(.*?)<\/sergey-link>/gms
+  links: /<sergey-link\s?(.*?)to="([a-zA-Z0-9-.#?\\\/]*)"\s?(.*?)>(.*?)<\/sergey-link>/gms
 };
 
 /**
@@ -194,9 +195,10 @@ const primeExcludedFiles = name => {
     excludedFolders.push(name);
   }
 };
-const cleanPath = (path) => path.replace('index.html', '').split('#')[0];
+const cleanPath = path => path.replace('index.html', '').split('#')[0];
 const isCurrentPage = (ref, path) => path && cleanPath(path) === cleanPath(ref);
-const isParentPage = (ref, path) => path && cleanPath(path).startsWith(cleanPath(ref));
+const isParentPage = (ref, path) =>
+  path && cleanPath(path).startsWith(cleanPath(ref));
 
 /**
  * #business logic
@@ -338,17 +340,27 @@ const compileLinks = (body, path) => {
       patterns.links.lastIndex++;
     }
 
-    let [find, to, content] = m;
+    let [find, attr1 = '', to, attr2 = '', content] = m;
     let replace = '';
+    let attributes = [`href="${to}"`, attr1, attr2]
+      .map(x => x.trim())
+      .filter(Boolean)
+      .join(' ');
 
-    if (isCurrentPage(to, path)) {
-      replace = `<a href="${to}" class="${ACTIVE_CLASS}" aria-current="page">${content}</a>`;
-    } else if (isParentPage(to, path)) {
-      replace = `<a href="${to}" class="${ACTIVE_CLASS}">${content}</a>`;
-    } else {
-      replace = `<a href="${to}">${content}</a>`;
+    const isCurrent = isCurrentPage(to, path);
+    if (isCurrent || isParentPage(to, path)) {
+      if (attributes.includes('class="')) {
+        attributes = attributes.replace('class="', `class="${ACTIVE_CLASS} `);
+      } else {
+        attributes += ` class="${ACTIVE_CLASS}"`;
+      }
+
+      if (isCurrent) {
+        attributes += ' aria-current="page"';
+      }
     }
 
+    replace = `<a ${attributes}>${content}</a>`;
     copy = copy.replace(find, replace);
   }
   body = copy;
