@@ -1,4 +1,10 @@
-const { compileTemplate, compileLinks, primeImport, IMPORTS, ACTIVE_CLASS } = require('../src');
+const {
+  compileTemplate,
+  compileLinks,
+  primeImport,
+  IMPORTS,
+  ACTIVE_CLASS
+} = require('../src');
 
 const wrapper = (x = '') => `<html>
   <body>
@@ -438,6 +444,58 @@ describe('Link compilation', () => {
       `;
     const desiredOutput = `
       <a href="/#subscribe" class="${ACTIVE_CLASS}">Subscribe</a>
+      `;
+    const output = compileLinks(input, path);
+
+    expect(output).toBe(desiredOutput);
+  });
+
+  test('Link with front-loaded classes', () => {
+    const path = '/index.html';
+    const input = `
+      <sergey-link class="my-class" to="/">Home</sergey-link>
+      `;
+    const desiredOutput = `
+      <a href="/" class="${ACTIVE_CLASS} my-class" aria-current="page">Home</a>
+      `;
+    const output = compileLinks(input, path);
+
+    expect(output).toBe(desiredOutput);
+  });
+
+  test('Link with back-loaded classes', () => {
+    const path = '/index.html';
+    const input = `
+      <sergey-link to="/" class="my-class">Home</sergey-link>
+      `;
+    const desiredOutput = `
+      <a href="/" class="${ACTIVE_CLASS} my-class" aria-current="page">Home</a>
+      `;
+    const output = compileLinks(input, path);
+
+    expect(output).toBe(desiredOutput);
+  });
+
+  test('Link with other attributes', () => {
+    const path = '/index.html';
+    const input = `
+      <sergey-link to="/" id="an-id">Home</sergey-link>
+      `;
+    const desiredOutput = `
+      <a href="/" id="an-id" class="${ACTIVE_CLASS}" aria-current="page">Home</a>
+      `;
+    const output = compileLinks(input, path);
+
+    expect(output).toBe(desiredOutput);
+  });
+
+  test('Link with ids and classes', () => {
+    const path = '/index.html';
+    const input = `
+      <sergey-link to="/" class="my-class" id="an-id">Home</sergey-link>
+      `;
+    const desiredOutput = `
+      <a href="/" class="${ACTIVE_CLASS} my-class" id="an-id" aria-current="page">Home</a>
       `;
     const output = compileLinks(input, path);
 
