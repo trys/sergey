@@ -19,28 +19,35 @@ By default, Sergey runs in the same directory as your `package.json` file. You c
 
 ---
 
-**Arg:** `--output`  
+**Arg:** `--output=`  
 **Env:** `SERGEY_OUTPUT`
 
 A `public` folder will be created to hold all the built files, unless you specify otherwise with this option.
 
 ---
 
-**Arg:** `--imports`  
+**Arg:** `--imports=`  
 **Env:** `SERGEY_IMPORTS`
 
 Sergey uses an `_imports` folder by default, but this argument lets you change that.
 
 ---
 
-**Arg:** `--content`  
+**Arg:** `--content=`  
 **Env:** `SERGEY_CONTENT`
 
 Markdown files should be stored in a `_imports` folder, but you can override that.
 
 ---
 
-**Arg:** `--exclude`  
+**Arg:** `--exclude=`  
 **Env:** `SERGEY_EXCLUDE`
 
 When in dev mode, Sergey watches for file changes, but ignores common folders like `node_modules`. It also ignores everything in your `.gitignore` file. You can add to that list with this argument, in a comma-separated format.
+
+---
+
+**Arg:** `--port=`  
+**Env:** `SERGEY_PORT`
+
+Override the default port of 8080 with this option.
