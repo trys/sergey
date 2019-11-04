@@ -109,6 +109,17 @@ describe('Slot compilation', () => {
     expect(output).toBe(desiredOutput);
   });
 
+  test('Named slot with underscores', () => {
+    const namedContent = 'Named content';
+
+    const input = wrapper(`<sergey-slot name="named_slot" />`);
+    const desiredOutput = wrapper(namedContent);
+
+    const output = compileTemplate(input, { named_slot: namedContent });
+
+    expect(output).toBe(desiredOutput);
+  });
+
   test('Named slot with spaceless tag', () => {
     const namedContent = 'Named content';
 
