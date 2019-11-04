@@ -52,14 +52,14 @@ const excludedFolders = [
 
 const patterns = {
   whitespace: /^\s+|\s+$/g,
-  templates: /<sergey-template name="([a-zA-Z0-9-.\\\/]*)">(.*?)<\/sergey-template>/gms,
-  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.\\\/]*)">(.*?)<\/sergey-slot>/gms,
-  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-.\\\/]*)"\s?\/>/gm,
+  templates: /<sergey-template name="([a-zA-Z0-9-_.\\\/]*)">(.*?)<\/sergey-template>/gms,
+  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-_.\\\/]*)">(.*?)<\/sergey-slot>/gms,
+  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-_.\\\/]*)"\s?\/>/gm,
   complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
-  complexImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-zA-Z0-9-.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
-  links: /<sergey-link\s?(.*?)to="([a-zA-Z0-9-.#?\\\/]*)"\s?(.*?)>(.*?)<\/sergey-link>/gms
+  complexImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
+  simpleImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
+  links: /<sergey-link\s?(.*?)to="([a-zA-Z0-9-_.#?\\\/]*)"\s?(.*?)>(.*?)<\/sergey-link>/gms
 };
 
 /**
