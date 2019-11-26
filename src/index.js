@@ -59,7 +59,7 @@ const patterns = {
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
   complexImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
   simpleImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
-  links: /<sergey-link\s?(.*?)to="([a-zA-Z0-9-_.#?\\\/]*)"\s?(.*?)>(.*?)<\/sergey-link>/gms
+  links: /<sergey-link\s?(.*?)(?:to|href)="([a-zA-Z0-9-_.#?\\\/]*)"\s?(.*?)>(.*?)<\/sergey-link>/gms
 };
 
 /**

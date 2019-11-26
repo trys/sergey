@@ -512,4 +512,16 @@ describe('Link compilation', () => {
 
     expect(output).toBe(desiredOutput);
   });
+
+  test('Link with href, rather than to', () => {
+    const input = `
+      <sergey-link href="/example-1/">Example Link 1</sergey-link>
+      `;
+    const desiredOutput = `
+      <a href="/example-1/">Example Link 1</a>
+      `;
+    const output = compileLinks(input);
+
+    expect(output).toBe(desiredOutput);
+  });
 });
