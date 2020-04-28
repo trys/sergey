@@ -2,6 +2,11 @@
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 const marked = require('marked');
+const {
+  html: {
+    prepareHTML,
+  },
+} = require('./lib');
 require('dotenv').config();
 
 /**
@@ -210,7 +215,7 @@ const prepareImports = async folder => {
 };
 
 const primeImport = (path, body) => {
-  cachedImports[path] = body;
+  cachedImports[path] = path.endsWith('.html') ? prepareHTML(body) : body;
 };
 
 const getSlots = content => {
@@ -313,7 +318,8 @@ const compileImport = (body, pattern) => {
   return body;
 };
 
-const compileTemplate = (body, slots = { default: '' }) => {
+const compileTemplate = (body_, slots = { default: '' }) => {
+  let body = prepareHTML(body_);
   body = compileSlots(body, slots);
 
   if (!hasImports(body)) {
