@@ -62,9 +62,8 @@ const excludedFolders = [
 const patterns = {
   whitespace: /^\s+|\s+$/g,
   templates: /<sergey-template name="([a-zA-Z0-9-_.\\\/]*)">(.*?)<\/sergey-template>/gms,
-  complexImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
-  simpleImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
   slot: 'sergey-slot',
+  import: 'sergey-import',
   link: 'sergey-link',
 };
 
@@ -194,7 +193,6 @@ const getKey = (key, ext = '.html', folder = '') => {
   const file = key.endsWith(ext) ? key : `${key}${ext}`;
   return `${folder}${file}`;
 };
-const hasImports = x => x.includes('<sergey-import');
 const primeExcludedFiles = name => {
   if (!excludedFolders.includes(name)) {
     excludedFolders.push(name);
@@ -257,17 +255,14 @@ const compileSlots = (body_, slots) => {
   return body;
 };
 
-const compileImport = (body, pattern) => {
-  let m;
-  // Simple imports
-  while ((m = pattern.exec(body)) !== null) {
-    if (m.index === pattern.lastIndex) {
-      pattern.lastIndex++;
-    }
+const compileImport = (body_) => {
+  let body = body_;
+  body = changeTag.main({ html: body, selector: patterns.import }, (node) => {
+    let key = domutils.getAttributeValue(node, 'src');
+    let htmlAs = domutils.getAttributeValue(node, 'as') || '';
+    let content = domutils.getInnerHTML(node) || '';
 
-    let [find, key, htmlAs = '', content = ''] = m;
     let replace = '';
-
     if (htmlAs === 'markdown') {
       replace = formatContent(
         marked(cachedImports[getKey(key, '.md', CONTENT)] || '')
@@ -280,8 +275,8 @@ const compileImport = (body, pattern) => {
 
     // Recurse
     replace = compileTemplate(replace, slots);
-    body = body.replace(find, replace);
-  }
+    return replace;
+  });
 
   return body;
 };
@@ -289,14 +284,7 @@ const compileImport = (body, pattern) => {
 const compileTemplate = (body_, slots = { default: '' }) => {
   let body = prepareHTML(body_);
   body = compileSlots(body, slots);
-
-  if (!hasImports(body)) {
-    return body;
-  }
-
-  body = compileImport(body, patterns.simpleImports);
-  body = compileImport(body, patterns.complexImports);
-
+  body = compileImport(body);
   return body;
 };
 
