@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const { performance } = require('perf_hooks');
+const { parseDOM } = require('htmlparser2');
+const { selectAll } = require('css-select');
+const domutils = require('domutils');
 const marked = require('marked');
 const {
   html: {
+    changeTag,
     prepareHTML,
   },
 } = require('./lib');
@@ -64,7 +68,7 @@ const patterns = {
   simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
   complexImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
   simpleImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
-  links: /<sergey-link\s?(.*?)(?:to|href)="([a-zA-Z0-9-_.#?\\\/]*)"\s?(.*?)>(.*?)<\/sergey-link>/gms
+  link: 'sergey-link',
 };
 
 /**
@@ -194,7 +198,6 @@ const getKey = (key, ext = '.html', folder = '') => {
   return `${folder}${file}`;
 };
 const hasImports = x => x.includes('<sergey-import');
-const hasLinks = x => x.includes('<sergey-link');
 const primeExcludedFiles = name => {
   if (!excludedFolders.includes(name)) {
     excludedFolders.push(name);
@@ -332,44 +335,30 @@ const compileTemplate = (body_, slots = { default: '' }) => {
   return body;
 };
 
-const compileLinks = (body, path) => {
-  let m;
-  let copy;
+const compileLinks = (body_, path) => {
+  let body = body_;
+  body = changeTag.main({ html: body, selector: patterns.link }, (node) => {
+    const arrTo = ['to', 'href'].filter((i) => domutils.hasAttrib(node, i))[0];
 
-  if (!hasLinks(body)) {
-    return body;
-  }
-
-  copy = body;
-  while ((m = patterns.links.exec(body)) !== null) {
-    if (m.index === patterns.links.lastIndex) {
-      patterns.links.lastIndex++;
-    }
-
-    let [find, attr1 = '', to, attr2 = '', content] = m;
-    let replace = '';
-    let attributes = [`href="${to}"`, attr1, attr2]
-      .map(x => x.trim())
-      .filter(Boolean)
-      .join(' ');
+    const to = arrTo ? domutils.getAttributeValue(node, arrTo) : '';
+    arrTo && delete node.attribs[arrTo];
 
     const isCurrent = isCurrentPage(to, path);
     if (isCurrent || isParentPage(to, path)) {
-      if (attributes.includes('class="')) {
-        attributes = attributes.replace('class="', `class="${ACTIVE_CLASS} `);
-      } else {
-        attributes += ` class="${ACTIVE_CLASS}"`;
-      }
+      const currClass = domutils.getAttributeValue(node, 'class') || '';
+      node.attribs['class'] = `${ACTIVE_CLASS} ${currClass.trimLeft()}`.trim();
 
       if (isCurrent) {
-        attributes += ' aria-current="page"';
+        node.attribs['aria-current'] = 'page';
       }
     }
 
-    replace = `<a ${attributes}>${content}</a>`;
-    copy = copy.replace(find, replace);
-  }
-  body = copy;
+    return domutils
+      .getOuterHTML(node)
+      .replace(/^<sergey-link/, '<a')
+      .replace('</sergey-link>', '</a>')
+      .replace(/^<a/, `<a href="${to}"`);
+  });
 
   return body;
 };
