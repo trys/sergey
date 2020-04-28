@@ -61,7 +61,7 @@ const excludedFolders = [
 
 const patterns = {
   whitespace: /^\s+|\s+$/g,
-  templates: /<sergey-template name="([a-zA-Z0-9-_.\\\/]*)">(.*?)<\/sergey-template>/gms,
+  template: 'sergey-template',
   slot: 'sergey-slot',
   import: 'sergey-import',
   link: 'sergey-link',
@@ -216,19 +216,20 @@ const primeImport = (path, body) => {
   cachedImports[path] = path.endsWith('.html') ? prepareHTML(body) : body;
 };
 
-const getSlots = content => {
+const getSlots = (content) => {
   // Extract templates first
   const slots = {
-    default: formatContent(content) || ''
+    default: formatContent(content) || '',
   };
 
   // Search content for templates
-  while ((m = patterns.templates.exec(content)) !== null) {
-    if (m.index === patterns.templates.lastIndex) {
-      patterns.templates.lastIndex++;
-    }
+  const nodes = parseDOM(content);
+  const items = selectAll(patterns.template, nodes);
+  items.forEach((node) => {
+    const find = domutils.getOuterHTML(node);
+    const name = domutils.getAttributeValue(node, 'name');
+    const data = domutils.getInnerHTML(node);
 
-    const [find, name, data] = m;
     if (name !== 'default') {
       // Remove it from the default content
       slots.default = slots.default.replace(find, '');
@@ -236,7 +237,7 @@ const getSlots = content => {
 
     // Add it as a named slot
     slots[name] = formatContent(data);
-  }
+  });
 
   slots.default = formatContent(slots.default);
 
