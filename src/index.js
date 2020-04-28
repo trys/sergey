@@ -62,12 +62,9 @@ const excludedFolders = [
 const patterns = {
   whitespace: /^\s+|\s+$/g,
   templates: /<sergey-template name="([a-zA-Z0-9-_.\\\/]*)">(.*?)<\/sergey-template>/gms,
-  complexNamedSlots: /<sergey-slot name="([a-zA-Z0-9-_.\\\/]*)">(.*?)<\/sergey-slot>/gms,
-  simpleNamedSlots: /<sergey-slot name="([a-zA-Z0-9-_.\\\/]*)"\s?\/>/gm,
-  complexDefaultSlots: /<sergey-slot>(.*?)<\/sergey-slot>/gms,
-  simpleDefaultSlots: /<sergey-slot\s?\/>/gm,
   complexImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?>(.*?)<\/sergey-import>/gms,
   simpleImports: /<sergey-import src="([a-zA-Z0-9-_.\\\/]*)"(?:\sas="(.*?)")?\s?\/>/gm,
+  slot: 'sergey-slot',
   link: 'sergey-link',
 };
 
@@ -248,46 +245,14 @@ const getSlots = content => {
   return slots;
 };
 
-const compileSlots = (body, slots) => {
-  let m;
-  let copy;
+const compileSlots = (body_, slots) => {
+  let body = body_;
 
-  // Complex named slots
-  copy = body;
-  while ((m = patterns.complexNamedSlots.exec(body)) !== null) {
-    if (m.index === patterns.complexNamedSlots.lastIndex) {
-      patterns.complexNamedSlots.lastIndex++;
-    }
-
-    const [find, name, fallback] = m;
-    copy = copy.replace(find, slots[name] || fallback || '');
-  }
-  body = copy;
-
-  // Simple named slots
-  while ((m = patterns.simpleNamedSlots.exec(body)) !== null) {
-    if (m.index === patterns.simpleNamedSlots.lastIndex) {
-      patterns.simpleNamedSlots.lastIndex++;
-    }
-
-    const [find, name] = m;
-    copy = copy.replace(find, slots[name] || '');
-  }
-  body = copy;
-
-  // Complex Default slots
-  while ((m = patterns.complexDefaultSlots.exec(body)) !== null) {
-    if (m.index === patterns.complexDefaultSlots.lastIndex) {
-      patterns.complexDefaultSlots.lastIndex++;
-    }
-
-    const [find, fallback] = m;
-    copy = copy.replace(find, slots.default || fallback || '');
-  }
-  body = copy;
-
-  // Simple default slots
-  body = body.replace(patterns.simpleDefaultSlots, slots.default);
+  body = changeTag.main({ html: body, selector: patterns.slot }, (node) => {
+    const name = domutils.getAttributeValue(node, 'name') || 'default';
+    const fallback = domutils.getInnerHTML(node);
+    return slots[name] || fallback || '';
+  });
 
   return body;
 };
