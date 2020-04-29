@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const { performance } = require('perf_hooks');
-const { parseDOM } = require('htmlparser2');
-const { selectAll } = require('css-select');
 const domutils = require('domutils');
 const marked = require('marked');
 const {
   html: {
+    nodes: { queryNodesByHTML },
     changeTag,
     prepareHTML,
   },
@@ -223,9 +222,11 @@ const getSlots = (content) => {
   };
 
   // Search content for templates
-  const nodes = parseDOM(content);
-  const items = selectAll(patterns.template, nodes);
-  items.forEach((node) => {
+  const { nodes } = queryNodesByHTML({
+    html: content,
+    selector: patterns.template,
+  });
+  nodes.forEach((node) => {
     const find = domutils.getOuterHTML(node);
     const name = domutils.getAttributeValue(node, 'name');
     const data = domutils.getInnerHTML(node);
