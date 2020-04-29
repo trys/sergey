@@ -26,7 +26,10 @@ module.exports = ({
   selectedNodes.forEach((i) => {
     const oldContent = modes[mode](i);
     const newContent = changeItem(i, oldContent);
+
+    if(newContent !== false) {
     base = base.replace(oldContent, newContent);
+    }
   });
   return base;
 };
