@@ -1,3 +1,5 @@
+const { parseDOM } = require('htmlparser2');
+const { getOuterHTML } = require('domutils');
 const VOID_ELEMENTS = require('./voidelements.json');
 
 // `<sergey-slot ...args />` -> `<sergey-slot ...args></sergey-slot>`
@@ -23,5 +25,6 @@ module.exports = (html_) => {
       html = html.replace(original, newTagContent);
     });
 
+  html = getOuterHTML(parseDOM(html));
   return html;
 };
