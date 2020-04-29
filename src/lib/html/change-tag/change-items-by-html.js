@@ -1,6 +1,5 @@
-const { parseDOM } = require('htmlparser2');
-const { selectAll } = require('css-select');
 const domutils = require('domutils');
+const { queryNodesByHTML } = require('../nodes');
 
 const defaultModes = {
   innerHTML: domutils.getInnerHTML,
@@ -21,14 +20,13 @@ module.exports = ({
 }) => {
   let base = html || base_ || '';
 
-  const nodes = parseDOM(base);
-  const selectedNodes = selectAll(selector, nodes);
+  const { nodes: selectedNodes } = queryNodesByHTML({ html: base, selector });
   selectedNodes.forEach((i) => {
     const oldContent = modes[mode](i);
     const newContent = changeItem(i, oldContent);
 
     if(newContent !== false) {
-    base = base.replace(oldContent, newContent);
+      base = base.replace(oldContent, newContent);
     }
   });
   return base;
