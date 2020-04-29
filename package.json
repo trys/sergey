@@ -30,7 +30,8 @@
     "dotenv": "^7.0.0",
     "htmlparser2": "^4.1.0",
     "marked": "^0.6.2",
-    "serve-static": "^1.13.2"
+    "serve-static": "^1.13.2",
+    "uid": "^1.0.0"
   },
   "devDependencies": {
     "jest": "^24.7.1"
