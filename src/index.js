@@ -42,9 +42,11 @@ const excludedFolders = [
   '.git',
   '.DS_Store',
   '.prettierrc',
+  '.editorconfig',
   'node_modules',
   'package.json',
   'package-lock.json',
+  'yarn.lock',
   IMPORTS_LOCAL,
   OUTPUT_LOCAL,
   ...EXCLUDE
