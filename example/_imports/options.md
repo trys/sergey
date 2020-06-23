@@ -51,3 +51,10 @@ When in dev mode, Sergey watches for file changes, but ignores common folders li
 **Env:** `SERGEY_PORT`
 
 Override the default port of 8080 with this option.
+
+---
+
+**Arg:** `--host=`  
+**Env:** `SERGEY_HOST`
+
+Override the default host of `localhost` with this option.
