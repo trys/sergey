@@ -17,6 +17,7 @@ const isWatching = process.argv.includes('--watch');
 
 const ROOT = getEnv('--root=', 'SERGEY_ROOT') || './';
 const PORT = Number(getEnv('--port=', 'SERGEY_PORT')) || 8080;
+const HOST = getEnv('--host=', 'SERGEY_HOST') || 'localhost';
 
 const IMPORTS_LOCAL = getEnv('--imports=', 'SERGEY_IMPORTS') || '_imports';
 const IMPORTS = `${ROOT}${IMPORTS_LOCAL}/`;
@@ -503,8 +504,8 @@ const sergeyRuntime = async () => {
 
     connect()
       .use(serveStatic(OUTPUT))
-      .listen(PORT, function() {
-        console.log(`Sergey running on http://localhost:${PORT}`);
+      .listen(PORT, HOST, function() {
+        console.log(`Sergey running on http://${HOST}:${PORT}`);
       });
   }
 };
