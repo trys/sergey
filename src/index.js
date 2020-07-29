@@ -252,7 +252,7 @@ const compileSlots = (body, slots) => {
     }
 
     const [find, name, fallback] = m;
-    copy = copy.replace(find, slots[name] || fallback || '');
+    copy = copy.replace(find, () => slots[name] || fallback || '');
   }
   body = copy;
 
@@ -263,7 +263,7 @@ const compileSlots = (body, slots) => {
     }
 
     const [find, name] = m;
-    copy = copy.replace(find, slots[name] || '');
+    copy = copy.replace(find, () => slots[name] || '');
   }
   body = copy;
 
@@ -274,12 +274,12 @@ const compileSlots = (body, slots) => {
     }
 
     const [find, fallback] = m;
-    copy = copy.replace(find, slots.default || fallback || '');
+    copy = copy.replace(find, () => slots.default || fallback || '');
   }
   body = copy;
 
   // Simple default slots
-  body = body.replace(patterns.simpleDefaultSlots, slots.default);
+  body = body.replace(patterns.simpleDefaultSlots, () => slots.default);
 
   return body;
 };
@@ -307,7 +307,7 @@ const compileImport = (body, pattern) => {
 
     // Recurse
     replace = compileTemplate(replace, slots);
-    body = body.replace(find, replace);
+    body = body.replace(find, () => replace);
   }
 
   return body;
@@ -350,7 +350,7 @@ const compileLinks = (body, path) => {
     const isCurrent = isCurrentPage(to, path);
     if (isCurrent || isParentPage(to, path)) {
       if (attributes.includes('class="')) {
-        attributes = attributes.replace('class="', `class="${ACTIVE_CLASS} `);
+        attributes = attributes.replace('class="', () => `class="${ACTIVE_CLASS} `);
       } else {
         attributes += ` class="${ACTIVE_CLASS}"`;
       }
@@ -361,7 +361,7 @@ const compileLinks = (body, path) => {
     }
 
     replace = `<a ${attributes}>${content}</a>`;
-    copy = copy.replace(find, replace);
+    copy = copy.replace(find, () => replace);
   }
   body = copy;
 
