@@ -14,6 +14,7 @@ const getEnv = (argKey, envKey) => {
   );
 };
 const isWatching = process.argv.includes('--watch');
+const isServing = !process.argv.includes('--no-server');
 
 const ROOT = getEnv('--root=', 'SERGEY_ROOT') || './';
 const PORT = Number(getEnv('--port=', 'SERGEY_PORT')) || 8080;
@@ -483,8 +484,6 @@ const sergeyRuntime = async () => {
 
   if (isWatching) {
     const chokidar = require('chokidar');
-    const connect = require('connect');
-    const serveStatic = require('serve-static');
 
     const watchRoot = ROOT.endsWith('/')
       ? ROOT.substring(0, ROOT.length - 1)
@@ -500,6 +499,13 @@ const sergeyRuntime = async () => {
     watcher.on('change', task);
     watcher.on('add', task);
     watcher.on('unlink', task);
+    
+    if (!isServing) {
+      return;
+    }
+
+    const connect = require('connect');
+    const serveStatic = require('serve-static');
 
     connect()
       .use(serveStatic(OUTPUT))
