@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/trys/sergey#readme",
   "dependencies": {
-    "chokidar": "^2.1.5",
+    "chokidar": "^3.5.2",
     "connect": "^3.6.6",
     "dotenv": "^7.0.0",
     "marked": "^0.6.2",
