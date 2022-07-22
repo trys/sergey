@@ -502,7 +502,7 @@ const sergeyRuntime = async () => {
     watcher.on('unlink', task);
 
     connect()
-      .use(serveStatic(OUTPUT))
+      .use(serveStatic(OUTPUT, {extensions: ['html', 'htm']}))
       .listen(PORT, function() {
         console.log(`Sergey running on http://localhost:${PORT}`);
       });
